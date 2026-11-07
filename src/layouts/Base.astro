@@ -1,0 +1,357 @@
+---
+import { getMenuWithCacheHint, getSiteSettingsWithCacheHint } from "emdash";
+import { EmDashHead, EmDashBodyStart, EmDashBodyEnd } from "emdash/ui";
+import { createPublicPageContext } from "emdash/page";
+import { Font } from "astro:assets";
+import { formatIssueDate } from "../utils/format";
+import "../styles/theme.css";
+
+interface Props {
+	title: string;
+	pageTitle?: string | null;
+	description?: string | null;
+	image?: string | null;
+	canonical?: string | null;
+	robots?: string | null;
+	type?: "website" | "article";
+	publishedTime?: string | null;
+	modifiedTime?: string | null;
+	author?: string | null;
+	/** Content reference, for plugin page contributions on content pages */
+	content?: { collection: string; id: string; slug?: string | null };
+	/** The front page shows the big masthead; other pages a compact one. */
+	front?: boolean;
+}
+
+const {
+	title,
+	pageTitle,
+	description,
+	image,
+	canonical,
+	robots,
+	type = "website",
+	publishedTime,
+	modifiedTime,
+	author,
+	content,
+	front = false,
+} = Astro.props;
+
+const [settings, primary, footer, social] = await Promise.all([
+	getSiteSettingsWithCacheHint(),
+	getMenuWithCacheHint("primary"),
+	getMenuWithCacheHint("footer"),
+	getMenuWithCacheHint("social"),
+]);
+if (Astro.cache?.enabled) {
+	for (const result of [settings, primary, footer, social]) {
+		if (result?.cacheHint) Astro.cache.set(result.cacheHint);
+	}
+}
+
+const siteTitle = settings.data.title ?? "NewConnect";
+const tagline = settings.data.tagline ?? "";
+const fullTitle = title === siteTitle ? title : `${title} | ${siteTitle}`;
+
+const TRAILING_SLASH = /(?<=.)\/$/;
+const currentPath = Astro.url.pathname.replace(TRAILING_SLASH, "");
+const siteUrl = (settings.data.url || Astro.url.origin).replace(/\/$/, "");
+const canonicalUrl =
+	canonical ?? (robots?.includes("noindex") ? undefined : `${siteUrl}${currentPath}`);
+
+const pageCtx = createPublicPageContext({
+	Astro,
+	kind: content ? "content" : "custom",
+	pageType: type,
+	title: fullTitle,
+	pageTitle: pageTitle ?? title,
+	description,
+	canonical: canonicalUrl,
+	image,
+	content,
+	seo: { ogImage: image, robots },
+	articleMeta: { publishedTime, modifiedTime, author },
+	siteName: siteTitle,
+});
+
+function isCurrent(url: string): "page" | undefined {
+	try {
+		const target = new URL(url, Astro.url);
+		if (target.origin !== Astro.url.origin) return undefined;
+		const path = target.pathname.replace(TRAILING_SLASH, "");
+		if (path === currentPath) return "page";
+	} catch {
+		// not a URL
+	}
+	return undefined;
+}
+
+const isExternal = (url: string) => /^https?:\/\//.test(url) && !url.startsWith(Astro.url.origin);
+
+const today = formatIssueDate(new Date());
+const year = new Date().getFullYear();
+const primaryItems = primary?.data?.items ?? [];
+const footerItems = footer?.data?.items ?? [];
+const socialItems = social?.data?.items ?? [];
+---
+
+<!doctype html>
+<html lang="ja">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<Font cssVariable="--font-serif" />
+		<Font cssVariable="--font-masthead" />
+		<title>{fullTitle}</title>
+		<EmDashHead page={pageCtx} />
+		<link rel="alternate" type="application/rss+xml" title={`${siteTitle} の記事`} href="/rss.xml" />
+	</head>
+	<body>
+		<EmDashBodyStart page={pageCtx} />
+		<a href="#main" class="skip">本文へ移動</a>
+
+		<header class:list={["masthead", { "masthead--front": front }]}>
+			<div class="wrap">
+				<div class="masthead__strip">
+					<span>{today}</span>
+					{front && tagline && <span class="masthead__tagline">{tagline}</span>}
+					<form method="get" action="/search" role="search" class="masthead__search">
+						<label for="site-search" class="sr-only">サイト内を検索</label>
+						<input id="site-search" type="search" name="q" placeholder="記事を検索" />
+						<button type="submit">検索</button>
+					</form>
+				</div>
+
+				{
+					front ? (
+						<h1 class="masthead__title">
+							<a href="/" aria-current="page">{siteTitle}</a>
+						</h1>
+					) : (
+						<p class="masthead__title">
+							<a href="/">{siteTitle}</a>
+						</p>
+					)
+				}
+
+				{
+					primaryItems.length > 0 && (
+						<nav class="masthead__nav" aria-label="メインメニュー">
+							<ul>
+								{primaryItems.map((item) => (
+									<li>
+										<a
+											href={item.url}
+											aria-current={isCurrent(item.url)}
+											target={item.target || undefined}
+											rel={isExternal(item.url) ? "noopener" : undefined}
+										>
+											{item.label}
+										</a>
+									</li>
+								))}
+							</ul>
+						</nav>
+					)
+				}
+			</div>
+		</header>
+
+		<main id="main" tabindex="-1">
+			<slot />
+		</main>
+
+		<footer class="colophon">
+			<div class="wrap">
+				<p class="colophon__title">{siteTitle}</p>
+				{
+					(footerItems.length > 0 || socialItems.length > 0) && (
+						<ul class="colophon__links">
+							{[...footerItems, ...socialItems].map((item) => (
+								<li>
+									<a href={item.url} rel={isExternal(item.url) ? "noopener" : undefined}>
+										{item.label}
+									</a>
+								</li>
+							))}
+							<li>
+								<a href="/rss.xml">RSS</a>
+							</li>
+						</ul>
+					)
+				}
+				<p class="colophon__copy">
+					© {year} {siteTitle} · Made with <a href="https://emdashcms.com">EmDash</a>
+				</p>
+			</div>
+		</footer>
+
+		<EmDashBodyEnd page={pageCtx} />
+	</body>
+</html>
+
+<style>
+	.skip {
+		position: absolute;
+		left: -9999px;
+	}
+
+	.skip:focus {
+		left: 8px;
+		top: 8px;
+		z-index: 10;
+		padding: 8px 12px;
+		background: var(--color-surface);
+	}
+
+	.masthead {
+		padding-top: 8px;
+		margin-bottom: 24px;
+	}
+
+	.masthead__strip {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 4px 16px;
+		padding-bottom: 6px;
+		border-bottom: 1px solid var(--color-rule);
+		color: var(--color-text-secondary);
+		font-family: var(--font-sans);
+		font-size: 0.8125rem;
+	}
+
+	.masthead__tagline {
+		flex: 1 1 auto;
+		text-align: center;
+	}
+
+	.masthead__search {
+		display: flex;
+		margin-left: auto;
+	}
+
+	.masthead__search input {
+		width: 10rem;
+		min-height: 32px;
+		padding: 2px 8px;
+		border: 1px solid var(--color-border);
+		border-right: 0;
+		background: var(--color-surface);
+		color: var(--color-text);
+		font: inherit;
+	}
+
+	.masthead__search button {
+		min-height: 32px;
+		padding: 0 10px;
+		border: 1px solid var(--color-rule);
+		background: var(--color-text);
+		color: var(--color-bg);
+		font: inherit;
+		cursor: pointer;
+	}
+
+	.masthead__title {
+		padding-block: 10px;
+		font-family: var(--font-masthead);
+		font-size: clamp(2rem, 6vw, 2.75rem);
+		font-weight: 900;
+		line-height: 1.1;
+		letter-spacing: 0.01em;
+		text-align: center;
+	}
+
+	.masthead--front .masthead__title {
+		padding-block: 18px 14px;
+		font-size: clamp(2.75rem, 11vw, 6rem);
+	}
+
+	.masthead__title a {
+		text-decoration: none;
+	}
+
+	.masthead__nav {
+		border-top: 3px double var(--color-rule);
+		border-bottom: 1px solid var(--color-rule);
+	}
+
+	.masthead__nav ul {
+		display: flex;
+		justify-content: center;
+		overflow-x: auto;
+		scrollbar-width: none;
+	}
+
+	.masthead__nav a {
+		display: block;
+		padding: 8px 14px;
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+		font-weight: 700;
+		white-space: nowrap;
+		text-decoration: none;
+	}
+
+	.masthead__nav a:hover,
+	.masthead__nav a[aria-current="page"] {
+		color: var(--color-brand);
+	}
+
+	@media (max-width: 719px) {
+		.masthead__nav ul {
+			justify-content: flex-start;
+		}
+
+		.masthead__search {
+			width: 100%;
+		}
+
+		.masthead__search input {
+			flex: 1;
+			width: auto;
+		}
+	}
+
+	main {
+		min-height: 50vh;
+	}
+
+	main:focus {
+		outline: none;
+	}
+
+	.colophon {
+		margin-top: 56px;
+		padding-block: 24px 40px;
+		border-top: 3px double var(--color-rule);
+		font-family: var(--font-sans);
+		font-size: 0.8125rem;
+		text-align: center;
+	}
+
+	.colophon__title {
+		font-family: var(--font-masthead);
+		font-size: 1.5rem;
+		font-weight: 900;
+	}
+
+	.colophon__links {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 4px 20px;
+		margin-top: 12px;
+	}
+
+	.colophon__links a {
+		display: inline-block;
+		padding-block: 6px;
+	}
+
+	.colophon__copy {
+		margin-top: 12px;
+		color: var(--color-muted);
+	}
+</style>

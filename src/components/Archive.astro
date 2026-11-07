@@ -1,0 +1,154 @@
+---
+import { getEmDashCollection } from "emdash";
+import { Image } from "emdash/ui";
+import Base from "../layouts/Base.astro";
+import { formatDate } from "../utils/format";
+
+/** A paginated list of the site's posts. Used by /posts, /category/[slug] and /tag/[slug]. */
+interface Props {
+	title: string;
+	lead?: string;
+	basePath: string;
+	where?: Record<string, string>;
+	noindex?: boolean;
+}
+
+const PAGE_SIZE = 20;
+const { title, lead, basePath, where, noindex } = Astro.props;
+
+const pageParam = Number.parseInt(Astro.url.searchParams.get("page") ?? "1", 10);
+const page = Number.isFinite(pageParam) && pageParam > 1 ? pageParam : 1;
+
+const result = await getEmDashCollection("posts", {
+	orderBy: { published_at: "desc" },
+	where,
+	limit: PAGE_SIZE,
+	offset: (page - 1) * PAGE_SIZE,
+});
+if (Astro.cache?.enabled && !result.error) Astro.cache.set(result.cacheHint);
+
+const posts = result.error ? [] : result.entries;
+const hasMore = !result.error && (result as { hasMore?: boolean }).hasMore === true;
+const pageHref = (n: number) => (n === 1 ? basePath : `${basePath}?page=${n}`);
+---
+
+<Base
+	title={page > 1 ? `${title}（${page} ページ目）` : title}
+	description={lead}
+	robots={noindex || page > 1 ? "noindex, follow" : undefined}
+>
+	<div class="wrap archive">
+		<header class="section-head">
+			<h1 class="section-head__title">{title}</h1>
+			{page > 1 && <span class="section-head__note">{page} ページ目</span>}
+		</header>
+		{lead && <p class="archive__lead">{lead}</p>}
+
+		{
+			posts.length === 0 ? (
+				<p class="empty-note">まだ記事がありません。</p>
+			) : (
+				<ul class="archive__list">
+					{posts.map((post) => (
+						<li class="row">
+							<div class="row__text">
+								{post.data.terms?.category?.[0] && (
+									<a class="kicker" href={`/category/${post.data.terms.category[0].slug}`}>
+										{post.data.terms.category[0].label}
+									</a>
+								)}
+								<h2 class="row__title">
+									<a class="headline-link" href={`/posts/${post.id}`}>
+										{post.data.title}
+									</a>
+								</h2>
+								{post.data.excerpt && <p class="row__excerpt">{post.data.excerpt}</p>}
+								{post.data.publishedAt && (
+									<p class="byline">
+										<time datetime={post.data.publishedAt.toISOString()}>
+											{formatDate(post.data.publishedAt)}
+										</time>
+									</p>
+								)}
+							</div>
+							{post.data.featured_image && (
+								<a class="row__media" href={`/posts/${post.id}`} tabindex="-1" aria-hidden="true">
+									<Image image={post.data.featured_image} sizes="200px" />
+								</a>
+							)}
+						</li>
+					))}
+				</ul>
+			)
+		}
+
+		{
+			(page > 1 || hasMore) && (
+				<nav class="pager" aria-label="ページ送り">
+					{page > 1 ? <a href={pageHref(page - 1)}>← 新しい記事</a> : <span />}
+					{hasMore && <a href={pageHref(page + 1)}>古い記事 →</a>}
+				</nav>
+			)
+		}
+	</div>
+</Base>
+
+<style>
+	.archive {
+		max-width: 880px;
+	}
+
+	.archive__lead {
+		margin-bottom: 16px;
+		color: var(--color-text-secondary);
+	}
+
+	.row {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 16px;
+		padding-block: 18px;
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	@media (min-width: 600px) {
+		.row:has(.row__media) {
+			grid-template-columns: minmax(0, 1fr) 180px;
+		}
+	}
+
+	.row__title {
+		margin-top: 2px;
+		font-size: 1.25rem;
+		font-weight: 900;
+		line-height: var(--leading-snug);
+	}
+
+	.row__excerpt {
+		margin-top: 6px;
+		color: var(--color-text-secondary);
+		font-size: 0.9375rem;
+	}
+
+	.row .byline {
+		margin-top: 6px;
+	}
+
+	.row__media :global(img) {
+		width: 100%;
+		aspect-ratio: 3 / 2;
+		object-fit: cover;
+	}
+
+	.pager {
+		display: flex;
+		justify-content: space-between;
+		margin-top: 24px;
+		font-family: var(--font-sans);
+		font-size: 0.9375rem;
+	}
+
+	.pager a {
+		padding: 8px 0;
+	}
+</style>

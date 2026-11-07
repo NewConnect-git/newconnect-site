@@ -1,0 +1,44 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	// Worker の名前。公開先の URL（newconnect.<アカウント>.workers.dev）にも使われる。
+	"name": "newconnect",
+	"main": "./src/worker.ts",
+	"compatibility_date": "2026-02-24",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"vars": {
+		// サイトの URL。最初のデプロイのあとに設定する。
+		// 設定すると画像が縮小して届くようになり、workers.dev からこの URL へ転送する。
+		// "EMDASH_SITE_URL": "https://www.new-connects.com",
+	},
+	"workers_dev": true,
+	"preview_urls": false,
+	// 日本から D1 を使うときは、次の行で表示が速くなることがある。
+	// "placement": { "mode": "targeted", "region": "aws:ap-northeast-1" },
+	// 独自ドメインを使うときは、次のように書く。
+	// "routes": [{ "pattern": "www.new-connects.com", "custom_domain": true }],
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "newconnect",
+		},
+	],
+	"kv_namespaces": [
+		{
+			"binding": "SESSION",
+		},
+	],
+	"r2_buckets": [
+		{
+			"binding": "MEDIA",
+			"bucket_name": "newconnect-media",
+		},
+	],
+	// RSS と Bluesky の取り込み、予約投稿に使う cron
+	"triggers": {
+		"crons": [
+			"* * * * *"
+		],
+	},
+}

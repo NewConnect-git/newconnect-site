@@ -1,0 +1,431 @@
+---
+import { getEmDashCollection, getSiteSettings } from "emdash";
+import { Image } from "emdash/ui";
+import Base from "../layouts/Base.astro";
+import { loadBluesky, loadFeedItems, withinWeek } from "../utils/feed";
+import { formatDate, formatShortDate, formatStamp, SOURCE_LABELS, truncate } from "../utils/format";
+
+const now = new Date();
+
+const [posts, feed, bluesky, settings] = await Promise.all([
+	getEmDashCollection("posts", { orderBy: { published_at: "desc" }, limit: 7 }),
+	loadFeedItems(),
+	loadBluesky(5),
+	getSiteSettings(),
+]);
+if (Astro.cache?.enabled) {
+	if (!posts.error) Astro.cache.set(posts.cacheHint);
+	for (const hint of [...feed.cacheHints, ...bluesky.cacheHints]) Astro.cache.set(hint);
+}
+
+const sitePosts = posts.error ? [] : posts.entries;
+const [lead, ...morePosts] = sitePosts;
+
+// The front page carries only what arrived in the last seven days.
+const week = withinWeek(feed.items, now);
+const videos = week.filter((item) => item.kind === "video");
+const articles = week.filter((item) => item.kind === "article");
+const [leadVideo, ...otherVideos] = videos;
+
+// No Bluesky posts and no other posts yet: drop the sidebar column entirely.
+const hasSide = bluesky.posts.length > 0 || morePosts.length > 0;
+
+const weekStart = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000);
+const weekRange = `${formatShortDate(weekStart)}〜${formatShortDate(now)}`;
+---
+
+<Base
+	title={settings.title ?? "NewConnect"}
+	description={settings.tagline}
+	front
+>
+	<div class:list={["wrap front", { "front--with-side": hasSide }]}>
+		<div class="front__main">
+			{
+				lead && (
+					<article class="lead">
+						<div class="lead__text">
+							{lead.data.terms?.category?.[0] && (
+								<a class="kicker" href={`/category/${lead.data.terms.category[0].slug}`}>
+									{lead.data.terms.category[0].label}
+								</a>
+							)}
+							<h2 class="lead__title">
+								<a class="headline-link" href={`/posts/${lead.id}`}>
+									{lead.data.title}
+								</a>
+							</h2>
+							{lead.data.excerpt && <p class="lead__excerpt">{lead.data.excerpt}</p>}
+							{lead.data.publishedAt && (
+								<p class="byline">
+									<time datetime={lead.data.publishedAt.toISOString()}>
+										{formatDate(lead.data.publishedAt)}
+									</time>
+								</p>
+							)}
+						</div>
+						{lead.data.featured_image && (
+							<a class="lead__media" href={`/posts/${lead.id}`} tabindex="-1" aria-hidden="true">
+								<Image image={lead.data.featured_image} sizes="(min-width: 960px) 480px, 92vw" priority />
+							</a>
+						)}
+					</article>
+				)
+			}
+
+			<section class="block" aria-labelledby="videos-title">
+				<div class="section-head">
+					<h2 id="videos-title" class="section-head__title">今週の動画</h2>
+					<span class="section-head__note">{weekRange}</span>
+				</div>
+				{
+					videos.length === 0 ? (
+						<p class="empty-note">この 1 週間に公開された動画はまだありません。</p>
+					) : (
+						<div class="videos">
+							{leadVideo && (
+								<a class="video video--lead" href={leadVideo.url} rel="noopener">
+									<span class="video__thumb">
+										{leadVideo.thumbnail && <img src={leadVideo.thumbnail} alt="" loading="lazy" />}
+										<span class="video__play" aria-hidden="true" />
+									</span>
+									<span class="video__title">{leadVideo.title}</span>
+									<span class="byline">{formatStamp(leadVideo.postedAt)}</span>
+								</a>
+							)}
+							{otherVideos.length > 0 && (
+								<ul class="videos__list">
+									{otherVideos.map((video) => (
+										<li>
+											<a class="video" href={video.url} rel="noopener">
+												<span class="video__thumb">
+													{video.thumbnail && <img src={video.thumbnail} alt="" loading="lazy" />}
+													<span class="video__play" aria-hidden="true" />
+												</span>
+												<span class="video__title">{video.title}</span>
+												<span class="byline">{formatStamp(video.postedAt)}</span>
+											</a>
+										</li>
+									))}
+								</ul>
+							)}
+						</div>
+					)
+				}
+			</section>
+
+			<section class="block" aria-labelledby="articles-title">
+				<div class="section-head">
+					<h2 id="articles-title" class="section-head__title">今週の記事</h2>
+					<span class="section-head__note">{weekRange}・{articles.length} 本</span>
+				</div>
+				{
+					articles.length === 0 ? (
+						<p class="empty-note">この 1 週間に届いた記事はまだありません。</p>
+					) : (
+						<ul class="columns">
+							{articles.map((item) => (
+								<li class="story">
+									<span class="kicker">{SOURCE_LABELS[item.source] ?? item.source}</span>
+									<h3 class="story__title">
+										<a class="headline-link" href={item.url} rel="noopener">
+											{item.title}
+										</a>
+									</h3>
+									{item.summary && <p class="story__summary">{truncate(item.summary, 90)}</p>}
+									<p class="byline">
+										<time datetime={item.postedAt.toISOString()}>{formatStamp(item.postedAt)}</time>
+									</p>
+								</li>
+							))}
+						</ul>
+					)
+				}
+			</section>
+		</div>
+
+		{hasSide && (
+		<aside class="front__side" aria-label="サイドバー">
+			{
+				bluesky.posts.length > 0 && (
+					<section class="block" aria-labelledby="bluesky-title">
+						<div class="section-head">
+							<h2 id="bluesky-title" class="section-head__title">更新情報</h2>
+							<span class="section-head__note">Bluesky</span>
+						</div>
+						<ul class="briefs">
+							{bluesky.posts.map((post) => (
+								<li>
+									<a href={post.url} rel="noopener" class="brief">
+										<time class="byline" datetime={post.postedAt.toISOString()}>
+											{formatStamp(post.postedAt)}
+										</time>
+										<span>{truncate(post.text, 80)}</span>
+									</a>
+								</li>
+							))}
+						</ul>
+					</section>
+				)
+			}
+
+			{
+				morePosts.length > 0 && (
+					<section class="block" aria-labelledby="posts-title">
+						<div class="section-head">
+							<h2 id="posts-title" class="section-head__title">NewConnect の記事</h2>
+						</div>
+						<ul class="briefs">
+							{morePosts.map((post) => (
+								<li>
+									<a href={`/posts/${post.id}`} class="brief brief--post">
+										<span class="brief__title">{post.data.title}</span>
+										{post.data.publishedAt && (
+											<time class="byline" datetime={post.data.publishedAt.toISOString()}>
+												{formatDate(post.data.publishedAt)}
+											</time>
+										)}
+									</a>
+								</li>
+							))}
+						</ul>
+						<p class="more"><a href="/posts">記事の一覧へ →</a></p>
+					</section>
+				)
+			}
+		</aside>
+		)}
+	</div>
+</Base>
+
+<style>
+	.front {
+		display: grid;
+		gap: 32px;
+	}
+
+	@media (min-width: 960px) {
+		.front--with-side {
+			grid-template-columns: minmax(0, 1fr) 300px;
+			gap: 0;
+		}
+
+		.front--with-side .front__main {
+			padding-right: 28px;
+			border-right: 1px solid var(--color-rule);
+		}
+
+		.front__side {
+			padding-left: 28px;
+		}
+	}
+
+	.block + .block,
+	.lead + .block {
+		margin-top: 36px;
+	}
+
+	/* Top story */
+	.lead {
+		display: grid;
+		gap: 20px;
+		padding-bottom: 28px;
+		border-bottom: 1px solid var(--color-rule);
+	}
+
+	@media (min-width: 720px) {
+		.lead:has(.lead__media) {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+			align-items: start;
+		}
+	}
+
+	.lead__title {
+		margin-top: 6px;
+		font-size: clamp(1.625rem, 4vw, 2.375rem);
+		font-weight: 900;
+		line-height: var(--leading-tight);
+	}
+
+	.lead__excerpt {
+		margin-top: 14px;
+		color: var(--color-text-secondary);
+		font-size: 1.0625rem;
+		line-height: 1.9;
+	}
+
+	.lead .byline {
+		margin-top: 12px;
+	}
+
+	.lead__media :global(img) {
+		width: 100%;
+		aspect-ratio: 3 / 2;
+		object-fit: cover;
+		filter: grayscale(0.15) contrast(1.05);
+	}
+
+	/* Videos */
+	.videos {
+		display: grid;
+		gap: 20px;
+	}
+
+	@media (min-width: 720px) {
+		.videos:has(.videos__list) {
+			grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+		}
+	}
+
+	.videos__list {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 16px;
+		align-content: start;
+	}
+
+	.video {
+		display: grid;
+		gap: 6px;
+		text-decoration: none;
+	}
+
+	.video__thumb {
+		position: relative;
+		display: block;
+		overflow: hidden;
+		aspect-ratio: 16 / 9;
+		background: var(--color-fill-strong);
+	}
+
+	/* YouTube's thumbnails are 4:3 with black bars; crop them to 16:9 */
+	.video__thumb img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.video__play {
+		position: absolute;
+		left: 10px;
+		bottom: 10px;
+		width: 36px;
+		height: 26px;
+		border-radius: 6px;
+		background: rgb(0 0 0 / 0.75);
+	}
+
+	.video__play::after {
+		content: "";
+		position: absolute;
+		inset: 7px auto auto 14px;
+		border-style: solid;
+		border-width: 6px 0 6px 10px;
+		border-color: transparent transparent transparent #fff;
+	}
+
+	.video--lead .video__play {
+		width: 56px;
+		height: 40px;
+		left: 14px;
+		bottom: 14px;
+	}
+
+	.video--lead .video__play::after {
+		inset: 11px auto auto 22px;
+		border-width: 9px 0 9px 15px;
+	}
+
+	.video__title {
+		font-weight: 700;
+		line-height: var(--leading-snug);
+	}
+
+	.video--lead .video__title {
+		font-size: 1.25rem;
+		font-weight: 900;
+	}
+
+	.videos__list .video__title {
+		font-size: 0.9375rem;
+	}
+
+	.video:hover .video__title {
+		text-decoration: underline;
+		text-underline-offset: 0.2em;
+	}
+
+	/* Feed articles, set in ruled newspaper columns */
+	.columns {
+		columns: 1;
+		column-gap: 28px;
+		column-rule: 1px solid var(--color-border);
+	}
+
+	@media (min-width: 600px) {
+		.columns {
+			columns: 2;
+		}
+	}
+
+	@media (min-width: 1100px) {
+		.columns {
+			columns: 3;
+		}
+	}
+
+	.story {
+		break-inside: avoid;
+		padding-block: 4px 16px;
+		margin-bottom: 16px;
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.story__title {
+		margin-top: 2px;
+		font-size: 1.0625rem;
+		font-weight: 700;
+		line-height: var(--leading-snug);
+	}
+
+	.story__summary {
+		margin-top: 6px;
+		color: var(--color-text-secondary);
+		font-size: 0.875rem;
+		line-height: 1.8;
+	}
+
+	.story .byline {
+		margin-top: 6px;
+	}
+
+	/* Sidebar briefs */
+	.briefs li + li {
+		border-top: 1px solid var(--color-border);
+	}
+
+	.brief {
+		display: grid;
+		gap: 2px;
+		padding-block: 10px;
+		font-size: 0.9375rem;
+		line-height: var(--leading-snug);
+		text-decoration: none;
+	}
+
+	.brief:hover span {
+		text-decoration: underline;
+		text-underline-offset: 0.2em;
+	}
+
+	.brief__title {
+		font-weight: 700;
+	}
+
+	.more {
+		margin-top: 8px;
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+		text-align: right;
+	}
+</style>

@@ -1,0 +1,197 @@
+/*
+  NewConnect — newspaper theme tokens and base styles.
+  Paper, ink and one red for section marks. Text colours keep at least
+  4.5:1 on the paper in light and dark.
+*/
+
+:root {
+	color-scheme: light dark;
+
+	--color-bg: #f6f2e8; /* newsprint */
+	--color-surface: #fbf8f1;
+	--color-text: #1b1a17; /* ink */
+	--color-text-secondary: #3d3a34;
+	--color-muted: #5e594f;
+	--color-border: #cfc7b6;
+	--color-rule: #1b1a17;
+	--color-fill: #ece6d8;
+	--color-fill-strong: #e0d8c6;
+	--color-media-outline: rgb(0 0 0 / 0.08);
+	--color-brand: #9b1c1c; /* section red */
+	--color-brand-hover: #7d1515;
+	--color-on-brand: #fff;
+	--color-accent: #9b1c1c;
+
+	--font-body: var(--font-serif);
+	--font-mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
+	--font-sans: "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+
+	--font-size-sm: 0.875rem;
+	--font-size-base: 1rem;
+	--font-size-lg: 1.125rem;
+	--font-size-xl: 1.375rem;
+	--font-size-2xl: 1.75rem;
+	--leading-tight: 1.3;
+	--leading-snug: 1.5;
+	--leading-normal: 1.8;
+
+	--radius-sm: 2px;
+	--radius-lg: 2px;
+	--radius-full: 999px;
+
+	--page-width: 1200px;
+	--content-width: 42rem;
+	--gutter: 16px;
+	--transition-fast: 120ms ease;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--color-bg: #161512;
+		--color-surface: #1e1c18;
+		--color-text: #ece6d8;
+		--color-text-secondary: #d3ccbd;
+		--color-muted: #a9a293;
+		--color-border: #3f3b33;
+		--color-rule: #ece6d8;
+		--color-fill: #24221d;
+		--color-fill-strong: #2e2b25;
+		--color-media-outline: rgb(255 255 255 / 0.08);
+		--color-brand: #f09080;
+		--color-brand-hover: #f5aa9c;
+		--color-on-brand: #1b1a17;
+		--color-accent: #f09080;
+	}
+}
+
+@media (min-width: 720px) {
+	:root {
+		--gutter: 28px;
+	}
+}
+
+/* The reset sits in its own layer, below prose.css (@layer base), so body
+   text keeps its spacing and list markers. */
+@layer reset, base;
+
+@layer reset {
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+* {
+	margin: 0;
+	padding: 0;
+}
+
+html {
+	-webkit-text-size-adjust: 100%;
+}
+
+body {
+	background: var(--color-bg);
+	color: var(--color-text);
+	font-family: var(--font-body);
+	font-size: 16px;
+	line-height: var(--leading-normal);
+	font-feature-settings: "palt" 0;
+	overflow-wrap: break-word;
+}
+
+img {
+	display: block;
+	max-width: 100%;
+	height: auto;
+}
+
+a {
+	color: inherit;
+}
+
+ul,
+ol {
+	list-style: none;
+}
+}
+
+:focus-visible {
+	outline: 2px solid var(--color-brand);
+	outline-offset: 2px;
+}
+
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+}
+
+/* Shared newspaper parts */
+
+.wrap {
+	width: 100%;
+	max-width: var(--page-width);
+	margin-inline: auto;
+	padding-inline: var(--gutter);
+}
+
+/* A section heading set between rules: ── 今週の記事 ── */
+.section-head {
+	display: flex;
+	align-items: baseline;
+	gap: 12px;
+	margin-bottom: 16px;
+	padding-block: 6px;
+	border-top: 3px double var(--color-rule);
+	border-bottom: 1px solid var(--color-rule);
+}
+
+.section-head__title {
+	font-size: 1.125rem;
+	font-weight: 900;
+	letter-spacing: 0.08em;
+}
+
+.section-head__note {
+	margin-left: auto;
+	color: var(--color-muted);
+	font-family: var(--font-sans);
+	font-size: 0.8125rem;
+}
+
+/* Small caps-like label above a headline */
+.kicker {
+	display: inline-block;
+	color: var(--color-brand);
+	font-family: var(--font-sans);
+	font-size: 0.75rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+}
+
+.byline {
+	color: var(--color-muted);
+	font-family: var(--font-sans);
+	font-size: 0.8125rem;
+}
+
+.headline-link {
+	text-decoration: none;
+}
+
+.headline-link:hover {
+	text-decoration: underline;
+	text-decoration-thickness: 1px;
+	text-underline-offset: 0.2em;
+}
+
+.empty-note {
+	padding: 24px 0;
+	color: var(--color-muted);
+	font-family: var(--font-sans);
+	font-size: 0.875rem;
+}

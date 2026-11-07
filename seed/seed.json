@@ -1,0 +1,437 @@
+{
+	"$schema": "https://emdashcms.com/seed.schema.json",
+	"version": "1",
+	"meta": {
+		"name": "NewConnect",
+		"description": "新聞風の NewConnect サイト。記事と、今週届いた RSS・YouTube をトップに並べる",
+		"author": "NewConnect"
+	},
+	"settings": {
+		"title": "NewConnect",
+		"tagline": "Notion と学びをつなぐ、こねくとの情報紙"
+	},
+	"collections": [
+		{
+			"slug": "posts",
+			"label": "記事",
+			"labelSingular": "記事",
+			"urlPattern": "/posts/{slug}",
+			"supports": [
+				"drafts",
+				"revisions",
+				"preview",
+				"scheduling",
+				"search",
+				"seo"
+			],
+			"fields": [
+				{
+					"slug": "title",
+					"label": "Title",
+					"type": "string",
+					"required": true,
+					"searchable": true
+				},
+				{
+					"slug": "featured_image",
+					"label": "Featured Image",
+					"type": "image"
+				},
+				{
+					"slug": "content",
+					"label": "Content",
+					"type": "portableText",
+					"searchable": true
+				},
+				{
+					"slug": "excerpt",
+					"label": "Excerpt",
+					"type": "text"
+				}
+			]
+		},
+		{
+			"slug": "pages",
+			"label": "固定ページ",
+			"labelSingular": "固定ページ",
+			"urlPattern": "/pages/{slug}",
+			"supports": [
+				"drafts",
+				"revisions",
+				"preview",
+				"search",
+				"seo"
+			],
+			"fields": [
+				{
+					"slug": "title",
+					"label": "Title",
+					"type": "string",
+					"required": true,
+					"searchable": true
+				},
+				{
+					"slug": "content",
+					"label": "Content",
+					"type": "portableText",
+					"searchable": true
+				}
+			]
+		},
+		{
+			"slug": "bluesky",
+			"label": "Bluesky",
+			"labelSingular": "Bluesky の投稿",
+			"description": "Bluesky Feed プラグインが自動で入れる Bluesky の投稿",
+			"supports": [
+				"drafts",
+				"revisions"
+			],
+			"fields": [
+				{
+					"slug": "title",
+					"label": "タイトル",
+					"type": "string"
+				},
+				{
+					"slug": "text",
+					"label": "本文",
+					"type": "text"
+				},
+				{
+					"slug": "segments",
+					"label": "本文（リンク付き）",
+					"type": "json"
+				},
+				{
+					"slug": "post_url",
+					"label": "投稿のURL",
+					"type": "string"
+				},
+				{
+					"slug": "post_uri",
+					"label": "AT-URI",
+					"type": "string"
+				},
+				{
+					"slug": "posted_at",
+					"label": "投稿日時",
+					"type": "datetime"
+				},
+				{
+					"slug": "images",
+					"label": "画像",
+					"type": "json"
+				},
+				{
+					"slug": "link_card",
+					"label": "リンクカード",
+					"type": "json"
+				},
+				{
+					"slug": "langs",
+					"label": "言語",
+					"type": "json"
+				}
+			]
+		},
+		{
+			"slug": "feed_items",
+			"label": "フィード",
+			"labelSingular": "フィードの項目",
+			"description": "RSS Feed プラグインが自動で入れる YouTube や note などの項目",
+			"supports": [
+				"drafts",
+				"revisions"
+			],
+			"fields": [
+				{
+					"slug": "title",
+					"label": "タイトル",
+					"type": "string"
+				},
+				{
+					"slug": "summary",
+					"label": "概要",
+					"type": "text"
+				},
+				{
+					"slug": "item_url",
+					"label": "項目のURL",
+					"type": "string"
+				},
+				{
+					"slug": "item_id",
+					"label": "項目のID",
+					"type": "string"
+				},
+				{
+					"slug": "posted_at",
+					"label": "投稿日時",
+					"type": "datetime"
+				},
+				{
+					"slug": "thumbnail",
+					"label": "サムネイル",
+					"type": "json"
+				},
+				{
+					"slug": "source",
+					"label": "配信元",
+					"type": "string"
+				},
+				{
+					"slug": "kind",
+					"label": "種類",
+					"type": "string"
+				}
+			]
+		}
+	],
+	"taxonomies": [
+		{
+			"name": "category",
+			"label": "カテゴリー",
+			"labelSingular": "カテゴリー",
+			"hierarchical": true,
+			"collections": [
+				"posts"
+			],
+			"terms": [
+				{
+					"slug": "notion",
+					"label": "Notion"
+				},
+				{
+					"slug": "events",
+					"label": "イベント"
+				},
+				{
+					"slug": "news",
+					"label": "お知らせ"
+				}
+			]
+		},
+		{
+			"name": "tag",
+			"label": "タグ",
+			"labelSingular": "タグ",
+			"hierarchical": false,
+			"collections": [
+				"posts"
+			],
+			"terms": [
+				{
+					"slug": "zadankai",
+					"label": "Notion座談会"
+				},
+				{
+					"slug": "community",
+					"label": "コミュニティ"
+				}
+			]
+		}
+	],
+	"menus": [
+		{
+			"name": "primary",
+			"label": "メインメニュー",
+			"items": [
+				{
+					"type": "custom",
+					"label": "トップ",
+					"url": "/"
+				},
+				{
+					"type": "custom",
+					"label": "記事",
+					"url": "/posts"
+				},
+				{
+					"type": "custom",
+					"label": "Notion",
+					"url": "/category/notion"
+				},
+				{
+					"type": "custom",
+					"label": "イベント",
+					"url": "/category/events"
+				},
+				{
+					"type": "custom",
+					"label": "こねくとラーン",
+					"url": "https://coneran.new-connects.com/"
+				},
+				{
+					"type": "custom",
+					"label": "このサイトについて",
+					"url": "/pages/about"
+				}
+			]
+		},
+		{
+			"name": "footer",
+			"label": "フッター",
+			"items": [
+				{
+					"type": "custom",
+					"label": "このサイトについて",
+					"url": "/pages/about"
+				}
+			]
+		},
+		{
+			"name": "social",
+			"label": "SNS",
+			"items": []
+		}
+	],
+	"content": {
+		"posts": [
+			{
+				"id": "post-renewal",
+				"slug": "renewal",
+				"status": "published",
+				"taxonomies": {
+					"category": [
+						"news"
+					]
+				},
+				"data": {
+					"title": "NewConnect は新聞の装いになりました",
+					"excerpt": "サイトを EmDash に移し、トップページを新聞の一面のように作り直しました。今週届いた記事と動画を毎日まとめて載せます。",
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b1",
+							"children": [
+								{
+									"_type": "span",
+									"text": "NewConnect のサイトを WordPress から EmDash に移しました。トップページは新聞の一面のように、その週に届いた記事と YouTube の動画をまとめて載せます。",
+									"_key": "s1"
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b2",
+							"children": [
+								{
+									"_type": "span",
+									"text": "一面に載るもの",
+									"_key": "s2"
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b3",
+							"children": [
+								{
+									"_type": "span",
+									"text": "このサイトの記事のうち、いちばん新しいもの（トップ記事）",
+									"_key": "s3"
+								}
+							],
+							"listItem": "bullet",
+							"level": 1
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b4",
+							"children": [
+								{
+									"_type": "span",
+									"text": "直近 7 日間に RSS で届いた note・Zenn・はてなブログの記事",
+									"_key": "s4"
+								}
+							],
+							"listItem": "bullet",
+							"level": 1
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b5",
+							"children": [
+								{
+									"_type": "span",
+									"text": "直近 7 日間に公開された YouTube の動画",
+									"_key": "s5"
+								}
+							],
+							"listItem": "bullet",
+							"level": 1
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b6",
+							"children": [
+								{
+									"_type": "span",
+									"text": "Bluesky の NewConnect 更新情報",
+									"_key": "s6"
+								}
+							],
+							"listItem": "bullet",
+							"level": 1
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b7",
+							"children": [
+								{
+									"_type": "span",
+									"text": "このサンプル記事は、管理画面から書き換えたり消したりできます。",
+									"_key": "s7"
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"pages": [
+			{
+				"id": "page-about",
+				"slug": "about",
+				"status": "published",
+				"data": {
+					"title": "このサイトについて",
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b1",
+							"children": [
+								{
+									"_type": "span",
+									"text": "NewConnect は、Notion をはじめとするツールと学びを通して、人と人をつなぐ場です。",
+									"_key": "s1"
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b2",
+							"children": [
+								{
+									"_type": "span",
+									"text": "座談会やコミュニティ、ニュースレターの情報をここで発信しています。",
+									"_key": "s2"
+								}
+							]
+						}
+					]
+				}
+			}
+		]
+	}
+}

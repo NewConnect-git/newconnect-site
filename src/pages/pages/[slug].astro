@@ -1,0 +1,60 @@
+---
+import { decodeSlug, getEmDashEntry, getSeoMeta, getSiteSettings } from "emdash";
+import { PortableText } from "emdash/ui";
+import Base from "../../layouts/Base.astro";
+import "../../styles/prose.css";
+
+const slug = decodeSlug(Astro.params.slug);
+if (!slug) {
+	return Astro.rewrite("/404");
+}
+
+const { entry: page, cacheHint } = await getEmDashEntry("pages", slug);
+if (!page) {
+	return Astro.rewrite("/404");
+}
+if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
+
+const settings = await getSiteSettings();
+const seo = getSeoMeta(page, {
+	siteTitle: settings.title ?? "NewConnect",
+	siteUrl: Astro.url.origin,
+	path: `/pages/${slug}`,
+});
+---
+
+<Base
+	title={seo.title}
+	pageTitle={seo.ogTitle}
+	description={seo.description}
+	image={seo.ogImage}
+	canonical={seo.canonical}
+	robots={seo.robots}
+	content={{ collection: "pages", id: page.data.id, slug }}
+>
+	<article class="wrap page">
+		<h1 class="page__title" {...page.edit.title}>{page.data.title}</h1>
+		<div class="prose page__body" {...page.edit.content}>
+			<PortableText value={page.data.content} />
+		</div>
+	</article>
+</Base>
+
+<style>
+	.page {
+		max-width: calc(720px + var(--gutter) * 2);
+	}
+
+	.page__title {
+		padding-bottom: 12px;
+		border-bottom: 3px double var(--color-rule);
+		font-size: clamp(1.625rem, 4vw, 2.125rem);
+		font-weight: 900;
+		line-height: var(--leading-tight);
+	}
+
+	.page__body {
+		margin-top: 28px;
+		max-width: none;
+	}
+</style>

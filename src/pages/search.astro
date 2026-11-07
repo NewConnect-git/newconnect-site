@@ -1,0 +1,134 @@
+---
+export const prerender = false;
+
+import { getEmDashCollection, type PortableTextBlock } from "emdash";
+import Base from "../layouts/Base.astro";
+import { formatDate, truncate } from "../utils/format";
+import { extractText } from "../utils/reading-time";
+
+/*
+ * Looks through titles, leads and bodies directly. EmDash's index splits text
+ * on spaces, so it finds Japanese only at the start of a run of text
+ * (「このサイト」 but not 「サイト」); reading the text has no such problem.
+ */
+const query = Astro.url.searchParams.get("q")?.trim() ?? "";
+const normalize = (text: string) => text.normalize("NFKC").toLowerCase();
+const terms = normalize(query).split(/\s+/).filter(Boolean);
+
+type Row = { href: string; title: string; snippet: string; date: Date | null; inTitle: boolean };
+let rows: Row[] = [];
+
+if (terms.length > 0) {
+	const [posts, pages] = await Promise.all([
+		getEmDashCollection("posts", { orderBy: { published_at: "desc" }, limit: 1000 }),
+		getEmDashCollection("pages", { limit: 200 }),
+	]);
+	const candidates = [
+		...(posts.error ? [] : posts.entries).map((entry) => ({ entry, base: "/posts" })),
+		...(pages.error ? [] : pages.entries).map((entry) => ({ entry, base: "/pages" })),
+	];
+	rows = candidates.flatMap(({ entry, base }) => {
+		const data = entry.data as typeof entry.data & { excerpt?: string };
+		const title = data.title ?? "無題";
+		const body = [data.excerpt, extractText(data.content as PortableTextBlock[] | undefined)]
+			.filter(Boolean)
+			.join(" ");
+		const titleHay = normalize(title);
+		const bodyHay = normalize(body);
+		if (!terms.every((term) => titleHay.includes(term) || bodyHay.includes(term))) return [];
+		const at = Math.max(0, Math.min(...terms.map((term) => bodyHay.indexOf(term)).filter((i) => i >= 0), body.length) - 30);
+		return [
+			{
+				href: `${base}/${entry.id}`,
+				title,
+				snippet: truncate((at > 0 ? "…" : "") + body.slice(at), 120),
+				date: data.publishedAt ?? null,
+				inTitle: terms.some((term) => titleHay.includes(term)),
+			},
+		];
+	});
+	rows.sort((a, b) => Number(b.inTitle) - Number(a.inTitle) || (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0));
+	rows = rows.slice(0, 50);
+}
+---
+
+<Base title={query ? `「${query}」の検索結果` : "検索"} robots="noindex, follow">
+	<div class="wrap search">
+		<header class="section-head">
+			<h1 class="section-head__title">検索</h1>
+			{query && <span class="section-head__note">{rows.length} 件</span>}
+		</header>
+
+		<form method="get" action="/search" role="search" class="search__form">
+			<label for="q" class="sr-only">検索する言葉</label>
+			<input id="q" type="search" name="q" value={query} placeholder="検索する言葉" />
+			<button type="submit">検索</button>
+		</form>
+
+		{
+			query &&
+				(rows.length === 0 ? (
+					<p class="empty-note">「{query}」に当てはまる記事は見つかりませんでした。</p>
+				) : (
+					<ul>
+						{rows.map((row) => (
+							<li class="hit">
+								<a class="headline-link hit__title" href={row.href}>
+									{row.title}
+								</a>
+								{row.snippet && <p class="hit__snippet">{row.snippet}</p>}
+								{row.date && <p class="byline">{formatDate(row.date)}</p>}
+							</li>
+						))}
+					</ul>
+				))
+		}
+	</div>
+</Base>
+
+<style>
+	.search {
+		max-width: 880px;
+	}
+
+	.search__form {
+		display: flex;
+		margin-bottom: 16px;
+	}
+
+	.search__form input {
+		flex: 1;
+		min-height: 44px;
+		padding: 4px 12px;
+		border: 1px solid var(--color-rule);
+		border-right: 0;
+		background: var(--color-surface);
+		color: var(--color-text);
+		font: inherit;
+	}
+
+	.search__form button {
+		padding: 0 20px;
+		border: 1px solid var(--color-rule);
+		background: var(--color-text);
+		color: var(--color-bg);
+		font: inherit;
+		cursor: pointer;
+	}
+
+	.hit {
+		padding-block: 14px;
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.hit__title {
+		font-size: 1.125rem;
+		font-weight: 700;
+	}
+
+	.hit__snippet {
+		margin-top: 4px;
+		color: var(--color-text-secondary);
+		font-size: 0.9375rem;
+	}
+</style>

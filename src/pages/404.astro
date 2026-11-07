@@ -1,0 +1,40 @@
+---
+import Base from "../layouts/Base.astro";
+
+Astro.response.status = 404;
+---
+
+<Base title="ページが見つかりません" robots="noindex">
+	<div class="wrap notfound">
+		<p class="notfound__code">404</p>
+		<h1 class="notfound__title">お探しのページは見つかりませんでした</h1>
+		<p>移動したか、削除された可能性があります。</p>
+		<p class="notfound__links"><a href="/">トップへ戻る</a>・<a href="/posts">記事の一覧</a>・<a href="/search">検索</a></p>
+	</div>
+</Base>
+
+<style>
+	.notfound {
+		max-width: 720px;
+		padding-block: 40px;
+		text-align: center;
+	}
+
+	.notfound__code {
+		font-family: var(--font-masthead);
+		font-size: 4rem;
+		font-weight: 900;
+		line-height: 1;
+	}
+
+	.notfound__title {
+		margin-block: 16px 8px;
+		font-size: 1.5rem;
+		font-weight: 900;
+	}
+
+	.notfound__links {
+		margin-top: 16px;
+		font-family: var(--font-sans);
+	}
+</style>

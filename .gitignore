@@ -1,0 +1,20 @@
+node_modules
+dist
+!plugins/*/dist
+.astro
+.emdash/migrations.json
+uploads
+data.db
+data.db-*
+.wrangler
+
+# Environment / Wrangler secrets
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+
+# EmDash の更新ツールが作るもの（手元だけで使う）
+.emdash/UPGRADE.md
+.claude/skills

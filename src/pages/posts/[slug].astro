@@ -1,0 +1,209 @@
+---
+import { decodeSlug, getEmDashCollection, getEmDashEntry, getSeoMeta, getSiteSettings } from "emdash";
+import { Image, PortableText } from "emdash/ui";
+import Base from "../../layouts/Base.astro";
+import { getImageUrl } from "../../utils/image-url";
+import { formatDate } from "../../utils/format";
+import { getReadingTime } from "../../utils/reading-time";
+import "../../styles/prose.css";
+
+const slug = decodeSlug(Astro.params.slug);
+if (!slug) {
+	return Astro.rewrite("/404");
+}
+
+const { entry: post, cacheHint } = await getEmDashEntry("posts", slug);
+if (!post) {
+	return Astro.rewrite("/404");
+}
+if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
+
+const settings = await getSiteSettings();
+const siteTitle = settings.title ?? "NewConnect";
+const featuredImageUrl = getImageUrl(post.data.featured_image, Astro.url.origin);
+const defaultOg = settings.seo?.defaultOgImage?.url;
+const seo = getSeoMeta(post, {
+	siteTitle,
+	siteUrl: Astro.url.origin,
+	path: `/posts/${slug}`,
+	defaultOgImage: featuredImageUrl || (defaultOg ? new URL(defaultOg, Astro.url.origin).href : undefined),
+});
+
+const category = post.data.terms?.category?.[0];
+const tags = post.data.terms?.tag ?? [];
+const publishedAt = post.data.publishedAt ?? null;
+const readingTime = getReadingTime(post.data.content);
+
+// Other recent posts, for the bottom of the page
+const recent = await getEmDashCollection("posts", { orderBy: { published_at: "desc" }, limit: 5 });
+if (Astro.cache?.enabled && !recent.error) Astro.cache.set(recent.cacheHint);
+const others = (recent.error ? [] : recent.entries).filter((entry) => entry.id !== post.id).slice(0, 4);
+---
+
+<Base
+	title={seo.title}
+	pageTitle={seo.ogTitle}
+	description={seo.description}
+	image={seo.ogImage}
+	canonical={seo.canonical}
+	robots={seo.robots}
+	type="article"
+	publishedTime={publishedAt?.toISOString() ?? null}
+	modifiedTime={post.data.updatedAt.toISOString()}
+	author={siteTitle}
+	content={{ collection: "posts", id: post.data.id, slug }}
+>
+	<article class="wrap article">
+		<header class="article__head">
+			{category && <a class="kicker" href={`/category/${category.slug}`}>{category.label}</a>}
+			<h1 class="article__title" {...post.edit.title}>{post.data.title}</h1>
+			{
+				post.data.excerpt && (
+					<p class="article__lead" {...post.edit.excerpt}>
+						{post.data.excerpt}
+					</p>
+				)
+			}
+			<p class="byline article__byline">
+				{publishedAt && <time datetime={publishedAt.toISOString()}>{formatDate(publishedAt)}</time>}
+				<span>約 {readingTime} 分で読めます</span>
+			</p>
+		</header>
+
+		{
+			post.data.featured_image && (
+				<figure class="article__media" {...post.edit.featured_image}>
+					<Image image={post.data.featured_image} sizes="(min-width: 760px) 720px, 92vw" priority />
+				</figure>
+			)
+		}
+
+		<div class="prose article__body" {...post.edit.content}>
+			<PortableText value={post.data.content} />
+		</div>
+
+		{
+			tags.length > 0 && (
+				<ul class="article__tags" aria-label="タグ">
+					{tags.map((tag) => (
+						<li>
+							<a href={`/tag/${tag.slug}`}># {tag.label}</a>
+						</li>
+					))}
+				</ul>
+			)
+		}
+	</article>
+
+	{
+		others.length > 0 && (
+			<section class="wrap more" aria-labelledby="more-title">
+				<div class="section-head">
+					<h2 id="more-title" class="section-head__title">ほかの記事</h2>
+				</div>
+				<ul class="more__list">
+					{others.map((entry) => (
+						<li>
+							<a class="headline-link more__title" href={`/posts/${entry.id}`}>
+								{entry.data.title}
+							</a>
+							{entry.data.publishedAt && (
+								<p class="byline">{formatDate(entry.data.publishedAt)}</p>
+							)}
+						</li>
+					))}
+				</ul>
+			</section>
+		)
+	}
+</Base>
+
+<style>
+	.article {
+		max-width: calc(720px + var(--gutter) * 2);
+	}
+
+	.article__head {
+		padding-bottom: 16px;
+		border-bottom: 1px solid var(--color-rule);
+	}
+
+	.article__title {
+		margin-top: 6px;
+		font-size: clamp(1.75rem, 5vw, 2.5rem);
+		font-weight: 900;
+		line-height: var(--leading-tight);
+	}
+
+	.article__lead {
+		margin-top: 14px;
+		color: var(--color-text-secondary);
+		font-size: 1.125rem;
+	}
+
+	.article__byline {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px 16px;
+		margin-top: 12px;
+	}
+
+	.article__media {
+		margin-top: 24px;
+	}
+
+	.article__media :global(img) {
+		width: 100%;
+	}
+
+	.article__body {
+		margin-top: 28px;
+		max-width: none;
+	}
+
+	.article__tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+		margin-top: 32px;
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+	}
+
+	.article__tags a {
+		display: inline-block;
+		padding: 6px 12px;
+		border: 1px solid var(--color-border);
+		text-decoration: none;
+	}
+
+	.article__tags a:hover {
+		border-color: var(--color-rule);
+	}
+
+	.more {
+		max-width: calc(720px + var(--gutter) * 2);
+		margin-top: 48px;
+	}
+
+	.more__list {
+		display: grid;
+		gap: 0 28px;
+	}
+
+	@media (min-width: 600px) {
+		.more__list {
+			grid-template-columns: 1fr 1fr;
+		}
+	}
+
+	.more__list li {
+		padding-block: 12px;
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.more__title {
+		font-weight: 700;
+		line-height: var(--leading-snug);
+	}
+</style>

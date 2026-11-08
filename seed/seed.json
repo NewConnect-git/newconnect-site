@@ -308,7 +308,7 @@
 							"children": [
 								{
 									"_type": "span",
-									"text": "NewConnect のサイトを WordPress から EmDash に移しました。トップページは新聞の一面のように、その週に届いた記事と YouTube の動画をまとめて載せます。",
+									"text": "NewConnect のサイトを WordPress から EmDash に移し、トップページを新聞の一面のように作り直しました。",
 									"_key": "s1"
 								}
 							]
@@ -346,7 +346,7 @@
 							"children": [
 								{
 									"_type": "span",
-									"text": "直近 7 日間に RSS で届いた note・Zenn・はてなブログの記事",
+									"text": "週刊まとめ：その週に届いた YouTube の動画と、note・Zenn・はてなブログの記事",
 									"_key": "s4"
 								}
 							],
@@ -360,7 +360,7 @@
 							"children": [
 								{
 									"_type": "span",
-									"text": "直近 7 日間に公開された YouTube の動画",
+									"text": "Bluesky での NewConnect の更新情報",
 									"_key": "s5"
 								}
 							],
@@ -369,17 +369,15 @@
 						},
 						{
 							"_type": "block",
-							"style": "normal",
+							"style": "h2",
 							"_key": "b6",
 							"children": [
 								{
 									"_type": "span",
-									"text": "Bluesky の NewConnect 更新情報",
+									"text": "週刊まとめについて",
 									"_key": "s6"
 								}
-							],
-							"listItem": "bullet",
-							"level": 1
+							]
 						},
 						{
 							"_type": "block",
@@ -388,7 +386,7 @@
 							"children": [
 								{
 									"_type": "span",
-									"text": "このサンプル記事は、管理画面から書き換えたり消したりできます。",
+									"text": "毎週土曜の朝9時に、前の週（土曜〜金曜）に届いた動画と記事を、1本の記事にまとめて載せます。最初の週刊まとめが出るまでは、直近7日間に届いた分を一面に並べます。",
 									"_key": "s7"
 								}
 							]

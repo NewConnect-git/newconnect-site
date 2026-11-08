@@ -32,13 +32,16 @@ export default {
 	...handler,
 	fetch(request, env, ctx) {
 		const url = new URL(request.url);
-		// Once EMDASH_SITE_URL is set, send visitors on workers.dev to it.
+		// Once EMDASH_SITE_URL is set, send visitors on workers.dev, and on the
+		// bare domain when the site lives on www, to it.
 		const { EMDASH_SITE_URL: siteUrl } = env as { EMDASH_SITE_URL?: string };
-		const siteOrigin = siteUrl ? new URL(siteUrl).origin : null;
+		const site = siteUrl ? new URL(siteUrl) : null;
+		const siteOrigin = site?.origin ?? null;
+		const bareHost = site?.hostname.replace(/^www\./, "");
 		if (
 			siteOrigin &&
 			siteOrigin !== url.origin &&
-			url.hostname.endsWith(".workers.dev") &&
+			(url.hostname.endsWith(".workers.dev") || url.hostname === bareHost) &&
 			!KEEP_PREFIXES.some((prefix) => url.pathname.startsWith(prefix))
 		) {
 			// Never cache this: the Cloudflare cache keys by path whatever the

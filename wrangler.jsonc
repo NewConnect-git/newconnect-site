@@ -22,11 +22,13 @@
 		{
 			"binding": "DB",
 			"database_name": "newconnect",
+			"database_id": "b7910022-6f88-492f-95c4-9310b1b30c9d",
 		},
 	],
 	"kv_namespaces": [
 		{
 			"binding": "SESSION",
+			"id": "f1a8d8db28e84e5088ccc707fdf86d94",
 		},
 	],
 	"r2_buckets": [

@@ -2,8 +2,9 @@ import handler, { createScheduledHandler, PluginBridge } from "@emdash-cms/cloud
 
 export { PluginBridge };
 
-// The admin, its API and the files it loads stay on the old address too.
-const KEEP_PREFIXES = ["/_emdash", "/_astro"];
+// Built files stay reachable on the old address; everything else, the admin
+// included, moves to EMDASH_SITE_URL (passkeys only work on that address).
+const KEEP_PREFIXES = ["/_astro"];
 
 // Pages opened before setup get cached with no content, and finishing setup
 // purges nothing, so a new site would look empty for up to a day.

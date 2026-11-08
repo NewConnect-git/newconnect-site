@@ -19,7 +19,7 @@ Locally, `/_emdash/api/setup/dev-bypass?redirect=/_emdash/admin` skips setup.
 | --- | --- |
 | `wrangler.jsonc` | Worker settings; `EMDASH_SITE_URL` is the only place the site address is set |
 | `astro.config.mjs` | `emdash()` config, `routeRules` cache, plugins (`rss-feed`, `bluesky-feed`), fonts |
-| `src/worker.ts` | workers.dev redirect, purge after setup, 5xx kept out of cache, cron |
+| `src/worker.ts` | workers.dev and bare-domain redirect to www (admin too), purge after setup, 5xx kept out of cache, cron |
 | `src/pages/index.astro` | Front page |
 | `src/utils/feed.ts` | Reads `feed_items` and `bluesky`; `withinWeek()` is the 7-day window |
 | `src/utils/digest.ts` | The digest week (Saturday to Friday, JST) and the `weekly-` slug |

@@ -6,6 +6,7 @@ import { defineConfig, fontProviders } from "astro/config";
 import blueskyFeed from "bluesky-feed";
 import rssFeed from "rss-feed";
 import emdash from "emdash/astro";
+import weeklyDigest from "./src/plugins/weekly-digest/index.ts";
 import { readFileSync } from "node:fs";
 
 // The site's address, kept in one place: wrangler.jsonc. A commented-out line
@@ -57,7 +58,9 @@ export default defineConfig({
 			// rss-feed copies YouTube / note / Zenn / Hatena Blog items into
 			// `feed_items`; bluesky-feed copies Bluesky posts into `bluesky`.
 			// Each does nothing until it is configured in the admin.
-			plugins: [rssFeed, blueskyFeed],
+			// weekly-digest (in this repo) turns each week's feed_items into one
+			// post every Saturday at 9:00 JST.
+			plugins: [rssFeed, blueskyFeed, weeklyDigest()],
 		}),
 	],
 	fonts: [

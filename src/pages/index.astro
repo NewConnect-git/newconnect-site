@@ -2,13 +2,15 @@
 import { getEmDashCollection, getSiteSettings } from "emdash";
 import { Image } from "emdash/ui";
 import Base from "../layouts/Base.astro";
-import { loadBluesky, loadFeedItems, withinWeek } from "../utils/feed";
+import { digestWeekFromSlug, inWeek, isDigestSlug } from "../utils/digest";
+import { loadBluesky, loadFeedItems, WEEK_MS, withinWeek } from "../utils/feed";
 import { formatDate, formatShortDate, formatStamp, SOURCE_LABELS, truncate } from "../utils/format";
 
 const now = new Date();
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 const [posts, feed, bluesky, settings] = await Promise.all([
-	getEmDashCollection("posts", { orderBy: { published_at: "desc" }, limit: 7 }),
+	getEmDashCollection("posts", { orderBy: { published_at: "desc" }, limit: 12 }),
 	loadFeedItems(),
 	loadBluesky(5),
 	getSiteSettings(),
@@ -18,20 +20,35 @@ if (Astro.cache?.enabled) {
 	for (const hint of [...feed.cacheHints, ...bluesky.cacheHints]) Astro.cache.set(hint);
 }
 
-const sitePosts = posts.error ? [] : posts.entries;
-const [lead, ...morePosts] = sitePosts;
+const recentPosts = posts.error ? [] : posts.entries;
+// Weekly digests get their own section; the top story and the sidebar list
+// are the posts written by hand.
+const digest = recentPosts.find((post) => isDigestSlug(post.data.slug));
+const sitePosts = recentPosts.filter((post) => !isDigestSlug(post.data.slug));
+const [lead, ...otherPosts] = sitePosts;
+const morePosts = otherPosts.slice(0, 6);
 
-// The front page carries only what arrived in the last seven days.
-const week = withinWeek(feed.items, now);
-const videos = week.filter((item) => item.kind === "video");
-const articles = week.filter((item) => item.kind === "article");
-const [leadVideo, ...otherVideos] = videos;
+// The roundup shows the week of the latest digest. Before the first digest
+// comes out, it shows the last seven days instead.
+const digestWeek = digestWeekFromSlug(digest?.data.slug);
+const roundup = digestWeek
+	? feed.items.filter((item) => inWeek(item.postedAt, digestWeek))
+	: withinWeek(feed.items, now);
+const roundupRange = digestWeek
+	? `${formatShortDate(digestWeek.start)}〜${formatShortDate(digestWeek.lastDay)}`
+	: `${formatShortDate(new Date(now.getTime() - WEEK_MS + DAY_MS))}〜${formatShortDate(now)}`;
+// The big slot goes to a video, or failing that anything with a picture.
+const roundupLead =
+	roundup.find((item) => item.kind === "video" && item.thumbnail) ??
+	roundup.find((item) => item.thumbnail) ??
+	roundup[0];
+const roundupRest = roundup.filter((item) => item !== roundupLead);
+const roundupSide = roundupRest.slice(0, 5);
+const roundupMore = roundupRest.length - roundupSide.length;
+const digestHref = digest ? `/posts/${digest.id}` : null;
 
 // No Bluesky posts and no other posts yet: drop the sidebar column entirely.
 const hasSide = bluesky.posts.length > 0 || morePosts.length > 0;
-
-const weekStart = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000);
-const weekRange = `${formatShortDate(weekStart)}〜${formatShortDate(now)}`;
 ---
 
 <Base
@@ -73,37 +90,55 @@ const weekRange = `${formatShortDate(weekStart)}〜${formatShortDate(now)}`;
 				)
 			}
 
-			<section class="block" aria-labelledby="videos-title">
-				<div class="section-head">
-					<h2 id="videos-title" class="section-head__title">今週の動画</h2>
-					<span class="section-head__note">{weekRange}</span>
-				</div>
+			<section class="block roundup" aria-labelledby="roundup-title">
+				<header class="roundup__head">
+					<h2 id="roundup-title" class="roundup__title">
+						{digestHref ? <a class="headline-link" href={digestHref}>週刊まとめ</a> : "今週のまとめ"}
+					</h2>
+					<span class="roundup__sep" aria-hidden="true">/</span>
+					<p class="roundup__note">{roundupRange}に届いた動画と記事</p>
+				</header>
 				{
-					videos.length === 0 ? (
-						<p class="empty-note">この 1 週間に公開された動画はまだありません。</p>
+					!roundupLead ? (
+						<p class="empty-note">この 1 週間に届いた動画と記事はまだありません。</p>
 					) : (
-						<div class="videos">
-							{leadVideo && (
-								<a class="video video--lead" href={leadVideo.url} rel="noopener">
-									<span class="video__thumb">
-										{leadVideo.thumbnail && <img src={leadVideo.thumbnail} alt="" loading="lazy" />}
-										<span class="video__play" aria-hidden="true" />
+						<div class:list={["roundup__grid", { "roundup__grid--single": roundupSide.length === 0 }]}>
+							<a class="roundup-lead" href={roundupLead.url} rel="noopener">
+								{roundupLead.thumbnail && (
+									<span class="roundup-lead__media">
+										<img src={roundupLead.thumbnail} alt="" loading="lazy" />
+										{roundupLead.kind === "video" && <span class="play" aria-hidden="true" />}
 									</span>
-									<span class="video__title">{leadVideo.title}</span>
-									<span class="byline">{formatStamp(leadVideo.postedAt)}</span>
-								</a>
-							)}
-							{otherVideos.length > 0 && (
-								<ul class="videos__list">
-									{otherVideos.map((video) => (
+								)}
+								<span class="label">{SOURCE_LABELS[roundupLead.source] ?? roundupLead.source}</span>
+								<span class="roundup-lead__title">{roundupLead.title}</span>
+								{roundupLead.summary && (
+									<span class="roundup-lead__summary">{truncate(roundupLead.summary, 110)}</span>
+								)}
+								<time class="byline" datetime={roundupLead.postedAt.toISOString()}>
+									{formatStamp(roundupLead.postedAt)}
+								</time>
+							</a>
+							{roundupSide.length > 0 && (
+								<ul class="roundup-list">
+									{roundupSide.map((item) => (
 										<li>
-											<a class="video" href={video.url} rel="noopener">
-												<span class="video__thumb">
-													{video.thumbnail && <img src={video.thumbnail} alt="" loading="lazy" />}
-													<span class="video__play" aria-hidden="true" />
+											<a class="roundup-item" href={item.url} rel="noopener">
+												<span class="roundup-item__text">
+													<span class="label">{SOURCE_LABELS[item.source] ?? item.source}</span>
+													<span class="roundup-item__title">{item.title}</span>
+													{item.summary && (
+														<span class="roundup-item__summary">{truncate(item.summary, 60)}</span>
+													)}
+													<time class="byline" datetime={item.postedAt.toISOString()}>
+														{formatStamp(item.postedAt)}
+													</time>
 												</span>
-												<span class="video__title">{video.title}</span>
-												<span class="byline">{formatStamp(video.postedAt)}</span>
+												{item.thumbnail && (
+													<span class="roundup-item__thumb">
+														<img src={item.thumbnail} alt="" loading="lazy" />
+													</span>
+												)}
 											</a>
 										</li>
 									))}
@@ -112,33 +147,17 @@ const weekRange = `${formatShortDate(weekStart)}〜${formatShortDate(now)}`;
 						</div>
 					)
 				}
-			</section>
-
-			<section class="block" aria-labelledby="articles-title">
-				<div class="section-head">
-					<h2 id="articles-title" class="section-head__title">今週の記事</h2>
-					<span class="section-head__note">{weekRange}・{articles.length} 本</span>
-				</div>
 				{
-					articles.length === 0 ? (
-						<p class="empty-note">この 1 週間に届いた記事はまだありません。</p>
+					digestHref ? (
+						<p class="more">
+							<a href={digestHref}>
+								{roundupMore > 0 ? `ほか ${roundupMore} 本も、まとめ記事で読む →` : "まとめ記事を読む →"}
+							</a>
+						</p>
 					) : (
-						<ul class="columns">
-							{articles.map((item) => (
-								<li class="story">
-									<span class="kicker">{SOURCE_LABELS[item.source] ?? item.source}</span>
-									<h3 class="story__title">
-										<a class="headline-link" href={item.url} rel="noopener">
-											{item.title}
-										</a>
-									</h3>
-									{item.summary && <p class="story__summary">{truncate(item.summary, 90)}</p>}
-									<p class="byline">
-										<time datetime={item.postedAt.toISOString()}>{formatStamp(item.postedAt)}</time>
-									</p>
-								</li>
-							))}
-						</ul>
+						roundupMore > 0 && (
+							<p class="more roundup__later">ほか {roundupMore} 本は、土曜朝の週刊まとめに載ります。</p>
+						)
 					)
 				}
 			</section>
@@ -265,138 +284,165 @@ const weekRange = `${formatShortDate(weekStart)}〜${formatShortDate(now)}`;
 		filter: grayscale(0.15) contrast(1.05);
 	}
 
-	/* Videos */
-	.videos {
+	/* Weekly roundup: a big item on the left, a list with thumbnails on the right */
+	.roundup__head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 4px 10px;
+		margin-bottom: 20px;
+		padding-top: 10px;
+		border-top: 3px solid var(--color-brand);
+	}
+
+	.roundup__title {
+		font-size: 1.375rem;
+		font-weight: 900;
+	}
+
+	.roundup__sep {
+		color: var(--color-brand);
+		font-size: 1.375rem;
+	}
+
+	.roundup__note {
+		color: var(--color-muted);
+		font-size: 1.0625rem;
+	}
+
+	.roundup__grid {
 		display: grid;
-		gap: 20px;
+		gap: 28px;
 	}
 
 	@media (min-width: 720px) {
-		.videos:has(.videos__list) {
-			grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+		.roundup__grid:not(.roundup__grid--single) {
+			grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
 		}
 	}
 
-	.videos__list {
-		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: 16px;
-		align-content: start;
+	/* Source label: YouTube / note / Zenn / はてなブログ */
+	.label {
+		width: fit-content;
+		padding: 1px 6px;
+		background: var(--color-brand);
+		color: var(--color-on-brand);
+		font-family: var(--font-sans);
+		font-size: 0.6875rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		line-height: 1.6;
 	}
 
-	.video {
+	.roundup-lead {
 		display: grid;
-		gap: 6px;
+		gap: 8px;
+		align-content: start;
 		text-decoration: none;
 	}
 
-	.video__thumb {
+	.roundup-lead__media {
 		position: relative;
 		display: block;
 		overflow: hidden;
-		aspect-ratio: 16 / 9;
+		aspect-ratio: 4 / 3;
+		margin-bottom: 6px;
 		background: var(--color-fill-strong);
 	}
 
-	/* YouTube's thumbnails are 4:3 with black bars; crop them to 16:9 */
-	.video__thumb img {
+	.roundup-lead__media img {
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
 	}
 
-	.video__play {
+	.roundup-lead__title {
+		font-size: clamp(1.375rem, 2.6vw, 1.75rem);
+		font-weight: 900;
+		line-height: var(--leading-tight);
+	}
+
+	.roundup-lead__summary {
+		color: var(--color-text-secondary);
+		font-size: 1.0625rem;
+		line-height: 1.8;
+	}
+
+	.play {
 		position: absolute;
-		left: 10px;
-		bottom: 10px;
-		width: 36px;
-		height: 26px;
+		left: 14px;
+		bottom: 14px;
+		width: 56px;
+		height: 40px;
 		border-radius: 6px;
 		background: rgb(0 0 0 / 0.75);
 	}
 
-	.video__play::after {
+	.play::after {
 		content: "";
 		position: absolute;
-		inset: 7px auto auto 14px;
+		inset: 11px auto auto 22px;
 		border-style: solid;
-		border-width: 6px 0 6px 10px;
+		border-width: 9px 0 9px 15px;
 		border-color: transparent transparent transparent #fff;
 	}
 
-	.video--lead .video__play {
-		width: 56px;
-		height: 40px;
-		left: 14px;
-		bottom: 14px;
+	.roundup-list li + li {
+		border-top: 1px solid var(--color-border);
 	}
 
-	.video--lead .video__play::after {
-		inset: 11px auto auto 22px;
-		border-width: 9px 0 9px 15px;
+	.roundup-item {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		gap: 16px;
+		padding-block: 16px;
+		text-decoration: none;
 	}
 
-	.video__title {
-		font-weight: 700;
-		line-height: var(--leading-snug);
+	.roundup-list li:first-child .roundup-item {
+		padding-top: 0;
 	}
 
-	.video--lead .video__title {
-		font-size: 1.25rem;
-		font-weight: 900;
+	.roundup-item__text {
+		display: grid;
+		gap: 4px;
+		align-content: start;
 	}
 
-	.videos__list .video__title {
-		font-size: 0.9375rem;
-	}
-
-	.video:hover .video__title {
-		text-decoration: underline;
-		text-underline-offset: 0.2em;
-	}
-
-	/* Feed articles, set in ruled newspaper columns */
-	.columns {
-		columns: 1;
-		column-gap: 28px;
-		column-rule: 1px solid var(--color-border);
-	}
-
-	@media (min-width: 600px) {
-		.columns {
-			columns: 2;
-		}
-	}
-
-	@media (min-width: 1100px) {
-		.columns {
-			columns: 3;
-		}
-	}
-
-	.story {
-		break-inside: avoid;
-		padding-block: 4px 16px;
-		margin-bottom: 16px;
-		border-bottom: 1px solid var(--color-border);
-	}
-
-	.story__title {
-		margin-top: 2px;
+	.roundup-item__title {
 		font-size: 1.0625rem;
 		font-weight: 700;
 		line-height: var(--leading-snug);
 	}
 
-	.story__summary {
-		margin-top: 6px;
+	.roundup-item__summary {
 		color: var(--color-text-secondary);
 		font-size: 0.875rem;
-		line-height: 1.8;
+		line-height: 1.7;
 	}
 
-	.story .byline {
-		margin-top: 6px;
+	.roundup-item__thumb {
+		width: 80px;
+		height: 80px;
+		overflow: hidden;
+		background: var(--color-fill-strong);
+	}
+
+	.roundup-item__thumb img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.roundup-lead:hover .roundup-lead__title,
+	.roundup-item:hover .roundup-item__title {
+		text-decoration: underline;
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.2em;
+	}
+
+	.roundup__later {
+		color: var(--color-muted);
 	}
 
 	/* Sidebar briefs */

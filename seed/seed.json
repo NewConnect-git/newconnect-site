@@ -3,7 +3,7 @@
 	"version": "1",
 	"meta": {
 		"name": "NewConnect",
-		"description": "新聞風の NewConnect サイト。記事と、今週届いた RSS・YouTube をトップに並べる",
+		"description": "新聞風の NewConnect サイト。記事と、毎週土曜に出す RSS・YouTube の週刊まとめをトップに並べる",
 		"author": "NewConnect"
 	},
 	"settings": {
@@ -299,7 +299,7 @@
 				},
 				"data": {
 					"title": "NewConnect は新聞の装いになりました",
-					"excerpt": "サイトを EmDash に移し、トップページを新聞の一面のように作り直しました。今週届いた記事と動画を毎日まとめて載せます。",
+					"excerpt": "サイトを EmDash に移し、トップページを新聞の一面のように作り直しました。届いた記事と動画は、毎週土曜の朝に「週刊まとめ」として載せます。",
 					"content": [
 						{
 							"_type": "block",

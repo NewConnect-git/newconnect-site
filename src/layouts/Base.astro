@@ -3,7 +3,6 @@ import { getMenuWithCacheHint, getSiteSettingsWithCacheHint } from "emdash";
 import { EmDashHead, EmDashBodyStart, EmDashBodyEnd } from "emdash/ui";
 import { createPublicPageContext } from "emdash/page";
 import { Font } from "astro:assets";
-import { formatIssueDate } from "../utils/format";
 import "../styles/theme.css";
 
 interface Props {
@@ -51,7 +50,6 @@ if (Astro.cache?.enabled) {
 }
 
 const siteTitle = settings.data.title ?? "NewConnect";
-const tagline = settings.data.tagline ?? "";
 const fullTitle = title === siteTitle ? title : `${title} | ${siteTitle}`;
 
 const TRAILING_SLASH = /(?<=.)\/$/;
@@ -89,7 +87,6 @@ function isCurrent(url: string): "page" | undefined {
 
 const isExternal = (url: string) => /^https?:\/\//.test(url) && !url.startsWith(Astro.url.origin);
 
-const today = formatIssueDate(new Date());
 const year = new Date().getFullYear();
 const primaryItems = primary?.data?.items ?? [];
 const footerItems = footer?.data?.items ?? [];
@@ -114,8 +111,6 @@ const socialItems = social?.data?.items ?? [];
 		<header class:list={["masthead", { "masthead--front": front }]}>
 			<div class="wrap">
 				<div class="masthead__strip">
-					<span>{today}</span>
-					{front && tagline && <span class="masthead__tagline">{tagline}</span>}
 					<form method="get" action="/search" role="search" class="masthead__search">
 						<label for="site-search" class="sr-only">サイト内を検索</label>
 						<input id="site-search" type="search" name="q" placeholder="記事を検索" />
@@ -123,38 +118,40 @@ const socialItems = social?.data?.items ?? [];
 					</form>
 				</div>
 
-				{
-					front ? (
-						<h1 class="masthead__title">
-							<a href="/" aria-current="page">{siteTitle}</a>
-						</h1>
-					) : (
-						<p class="masthead__title">
-							<a href="/">{siteTitle}</a>
-						</p>
-					)
-				}
+				<div class="masthead__bar">
+					{
+						front ? (
+							<h1 class="masthead__title">
+								<a href="/" aria-current="page">{siteTitle}</a>
+							</h1>
+						) : (
+							<p class="masthead__title">
+								<a href="/">{siteTitle}</a>
+							</p>
+						)
+					}
 
-				{
-					primaryItems.length > 0 && (
-						<nav class="masthead__nav" aria-label="メインメニュー">
-							<ul>
-								{primaryItems.map((item) => (
-									<li>
-										<a
-											href={item.url}
-											aria-current={isCurrent(item.url)}
-											target={item.target || undefined}
-											rel={isExternal(item.url) ? "noopener" : undefined}
-										>
-											{item.label}
-										</a>
-									</li>
-								))}
-							</ul>
-						</nav>
-					)
-				}
+					{
+						primaryItems.length > 0 && (
+							<nav class="masthead__nav" aria-label="メインメニュー">
+								<ul>
+									{primaryItems.map((item) => (
+										<li>
+											<a
+												href={item.url}
+												aria-current={isCurrent(item.url)}
+												target={item.target || undefined}
+												rel={isExternal(item.url) ? "noopener" : undefined}
+											>
+												{item.label}
+											</a>
+										</li>
+									))}
+								</ul>
+							</nav>
+						)
+					}
+				</div>
 			</div>
 		</header>
 
@@ -207,34 +204,24 @@ const socialItems = social?.data?.items ?? [];
 
 	.masthead {
 		padding-top: 8px;
-		margin-bottom: 24px;
+		margin-bottom: 28px;
 	}
 
+	/* Only the search box, small, at the top right */
 	.masthead__strip {
 		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 4px 16px;
-		padding-bottom: 6px;
-		border-bottom: 1px solid var(--color-rule);
-		color: var(--color-text-secondary);
+		justify-content: flex-end;
 		font-family: var(--font-sans);
 		font-size: 0.8125rem;
 	}
 
-	.masthead__tagline {
-		flex: 1 1 auto;
-		text-align: center;
-	}
-
 	.masthead__search {
 		display: flex;
-		margin-left: auto;
 	}
 
 	.masthead__search input {
 		width: 10rem;
-		min-height: 32px;
+		min-height: 30px;
 		padding: 2px 8px;
 		border: 1px solid var(--color-border);
 		border-right: 0;
@@ -244,7 +231,7 @@ const socialItems = social?.data?.items ?? [];
 	}
 
 	.masthead__search button {
-		min-height: 32px;
+		min-height: 30px;
 		padding: 0 10px;
 		border: 1px solid var(--color-rule);
 		background: var(--color-text);
@@ -253,19 +240,24 @@ const socialItems = social?.data?.items ?? [];
 		cursor: pointer;
 	}
 
+	/* Site name on the left, menu on the right, one rule underneath */
+	.masthead__bar {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 4px 24px;
+		padding-block: 10px 8px;
+		border-bottom: 1px solid var(--color-rule);
+	}
+
 	.masthead__title {
-		padding-block: 10px;
+		flex: none;
 		font-family: var(--font-masthead);
-		font-size: clamp(2rem, 6vw, 2.75rem);
+		font-size: clamp(1.75rem, 5vw, 2.25rem);
 		font-weight: 900;
 		line-height: 1.1;
 		letter-spacing: 0.01em;
-		text-align: center;
-	}
-
-	.masthead--front .masthead__title {
-		padding-block: 18px 14px;
-		font-size: clamp(2.75rem, 11vw, 6rem);
 	}
 
 	.masthead__title a {
@@ -273,23 +265,37 @@ const socialItems = social?.data?.items ?? [];
 	}
 
 	.masthead__nav {
-		border-top: 3px double var(--color-rule);
-		border-bottom: 1px solid var(--color-rule);
+		min-width: 0;
 	}
 
 	.masthead__nav ul {
 		display: flex;
-		justify-content: center;
+		align-items: center;
 		overflow-x: auto;
 		scrollbar-width: none;
 	}
 
+	.masthead__nav li {
+		display: flex;
+		align-items: center;
+		flex: none;
+	}
+
+	/* Slashes between items, as in the reference; not read aloud */
+	.masthead__nav li + li::before {
+		content: "/" / "";
+		padding-inline: 4px;
+		color: var(--color-muted);
+		font-family: var(--font-sans);
+		font-size: 1.0625rem;
+	}
+
 	.masthead__nav a {
 		display: block;
-		padding: 8px 14px;
+		padding: 8px 6px;
 		font-family: var(--font-sans);
-		font-size: 0.875rem;
-		font-weight: 700;
+		font-size: 1rem;
+		font-weight: 500;
 		white-space: nowrap;
 		text-decoration: none;
 	}
@@ -300,17 +306,16 @@ const socialItems = social?.data?.items ?? [];
 	}
 
 	@media (max-width: 719px) {
-		.masthead__nav ul {
-			justify-content: flex-start;
-		}
-
-		.masthead__search {
+		.masthead__nav {
 			width: 100%;
 		}
 
-		.masthead__search input {
-			flex: 1;
-			width: auto;
+		.masthead__nav a {
+			font-size: 0.9375rem;
+		}
+
+		.masthead__nav li:first-child a {
+			padding-left: 0;
 		}
 	}
 

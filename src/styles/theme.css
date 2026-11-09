@@ -1,14 +1,14 @@
 /*
   NewConnect — newspaper theme tokens and base styles.
-  Paper, ink and one red for section marks. Text colours keep at least
+  White paper, ink and one red for section marks. Text colours keep at least
   4.5:1 on the paper in light and dark.
 */
 
 :root {
 	color-scheme: light dark;
 
-	--color-bg: #f6f2e8; /* newsprint */
-	--color-surface: #fbf8f1;
+	--color-bg: #ffffff;
+	--color-surface: #ffffff;
 	--color-text: #1b1a17; /* ink */
 	--color-text-secondary: #3d3a34;
 	--color-muted: #5e594f;

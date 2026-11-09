@@ -25,9 +25,18 @@ export function formatShortDate(date: Date): string {
 	return date.toLocaleDateString("ja-JP", { month: "long", day: "numeric", timeZone: TIME_ZONE });
 }
 
-/** "11/6 14:05" */
-export function formatStamp(date: Date): string {
-	const md = date.toLocaleDateString("ja-JP", { month: "numeric", day: "numeric", timeZone: TIME_ZONE });
+/**
+ * "11/6 14:05", or "2025/11/6 14:05" for a date outside the current year,
+ * so an old post shown below a newer one does not look out of order.
+ */
+export function formatStamp(date: Date, now = new Date()): string {
+	const year = (d: Date) => d.toLocaleDateString("ja-JP", { year: "numeric", timeZone: TIME_ZONE });
+	const md = date.toLocaleDateString("ja-JP", {
+		...(year(date) === year(now) ? {} : { year: "numeric" }),
+		month: "numeric",
+		day: "numeric",
+		timeZone: TIME_ZONE,
+	});
 	const hm = date.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", timeZone: TIME_ZONE });
 	return `${md} ${hm}`;
 }

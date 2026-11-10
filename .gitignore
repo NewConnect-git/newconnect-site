@@ -18,3 +18,6 @@ data.db-*
 # EmDash の更新ツールが作るもの（手元だけで使う）
 .emdash/UPGRADE.md
 .claude/skills
+
+# Old WordPress export, kept locally only
+wp-download/

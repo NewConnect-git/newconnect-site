@@ -176,10 +176,10 @@ const hasSide = bluesky.posts.length > 0 || morePosts.length > 0;
 							{bluesky.posts.map((post) => (
 								<li>
 									<a href={post.url} rel="noopener" class="brief">
+										<span>{truncate(post.text, 80)}</span>
 										<time class="byline" datetime={post.postedAt.toISOString()}>
 											{formatStamp(post.postedAt)}
 										</time>
-										<span>{truncate(post.text, 80)}</span>
 									</a>
 								</li>
 							))}

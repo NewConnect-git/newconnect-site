@@ -45,8 +45,11 @@
 	--transition-fast: 120ms ease;
 }
 
+/* Dark tokens follow the OS unless the reader picks a theme with the header
+   toggle, which sets data-theme on <html> before the first paint. */
 @media (prefers-color-scheme: dark) {
-	:root {
+	:root:not([data-theme="light"]) {
+		color-scheme: dark;
 		--color-bg: #161512;
 		--color-surface: #1e1c18;
 		--color-text: #ece6d8;
@@ -62,6 +65,28 @@
 		--color-on-brand: #1b1a17;
 		--color-accent: #f09080;
 	}
+}
+
+:root[data-theme="dark"] {
+	color-scheme: dark;
+	--color-bg: #161512;
+	--color-surface: #1e1c18;
+	--color-text: #ece6d8;
+	--color-text-secondary: #d3ccbd;
+	--color-muted: #a9a293;
+	--color-border: #3f3b33;
+	--color-rule: #ece6d8;
+	--color-fill: #24221d;
+	--color-fill-strong: #2e2b25;
+	--color-media-outline: rgb(255 255 255 / 0.08);
+	--color-brand: #f09080;
+	--color-brand-hover: #f5aa9c;
+	--color-on-brand: #1b1a17;
+	--color-accent: #f09080;
+}
+
+:root[data-theme="light"] {
+	color-scheme: light;
 }
 
 @media (min-width: 720px) {

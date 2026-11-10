@@ -101,6 +101,13 @@ const socialItems = social?.data?.items ?? [];
 		<Font cssVariable="--font-serif" />
 		<Font cssVariable="--font-masthead" />
 		<title>{fullTitle}</title>
+		<script is:inline>
+			// Apply the reader's saved theme before the first paint.
+			try {
+				var saved = localStorage.getItem("theme");
+				if (saved === "light" || saved === "dark") document.documentElement.dataset.theme = saved;
+			} catch (e) {}
+		</script>
 		<EmDashHead page={pageCtx} />
 		<link rel="alternate" type="application/rss+xml" title={`${siteTitle} の記事`} href="/rss.xml" />
 	</head>
@@ -111,6 +118,22 @@ const socialItems = social?.data?.items ?? [];
 		<header class:list={["masthead", { "masthead--front": front }]}>
 			<div class="wrap">
 				<div class="masthead__strip">
+					<button type="button" class="theme-toggle" id="theme-toggle">
+						<svg class="theme-toggle__moon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+							<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor" />
+						</svg>
+						<svg class="theme-toggle__sun" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+							<circle cx="12" cy="12" r="4.5" fill="currentColor" />
+							<path
+								d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M4.6 19.4l2.1-2.1M17.3 6.7l2.1-2.1"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+							/>
+						</svg>
+						<span class="theme-toggle__to-dark">ダークモード</span>
+						<span class="theme-toggle__to-light">ライトモード</span>
+					</button>
 					<form method="get" action="/search" role="search" class="masthead__search">
 						<label for="site-search" class="sr-only">サイト内を検索</label>
 						<input id="site-search" type="search" name="q" placeholder="記事を検索" />
@@ -185,6 +208,30 @@ const socialItems = social?.data?.items ?? [];
 		</footer>
 
 		<EmDashBodyEnd page={pageCtx} />
+		<script is:inline>
+			(function () {
+				var button = document.getElementById("theme-toggle");
+				if (!button) return;
+				var root = document.documentElement;
+				var media = window.matchMedia("(prefers-color-scheme: dark)");
+				var isDark = function () {
+					return root.dataset.theme ? root.dataset.theme === "dark" : media.matches;
+				};
+				var sync = function () {
+					button.toggleAttribute("data-dark", isDark());
+				};
+				button.addEventListener("click", function () {
+					var next = isDark() ? "light" : "dark";
+					root.dataset.theme = next;
+					try {
+						localStorage.setItem("theme", next);
+					} catch (e) {}
+					sync();
+				});
+				media.addEventListener("change", sync);
+				sync();
+			})();
+		</script>
 	</body>
 </html>
 
@@ -211,8 +258,44 @@ const socialItems = social?.data?.items ?? [];
 	.masthead__strip {
 		display: flex;
 		justify-content: flex-end;
+		align-items: center;
+		gap: 12px;
 		font-family: var(--font-sans);
 		font-size: 0.8125rem;
+	}
+
+	/* Light/dark switch. The label names the mode it switches to;
+	   data-dark is set by the script while dark is showing. */
+	.theme-toggle {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		min-height: 30px;
+		padding: 0 10px;
+		border: 1px solid var(--color-border);
+		background: var(--color-surface);
+		color: var(--color-text);
+		font: inherit;
+		cursor: pointer;
+	}
+
+	.theme-toggle:hover {
+		border-color: var(--color-rule);
+	}
+
+	.theme-toggle__sun,
+	.theme-toggle__to-light,
+	.theme-toggle[data-dark] .theme-toggle__moon,
+	.theme-toggle[data-dark] .theme-toggle__to-dark {
+		display: none;
+	}
+
+	.theme-toggle[data-dark] .theme-toggle__sun {
+		display: block;
+	}
+
+	.theme-toggle[data-dark] .theme-toggle__to-light {
+		display: inline;
 	}
 
 	.masthead__search {

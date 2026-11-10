@@ -654,4 +654,11 @@ const socialItems = social?.data?.items ?? [];
 		margin-top: 12px;
 		color: var(--color-muted);
 	}
+
+	/* Room for the front page's back-to-top button so it never covers the footer */
+	@media (max-width: 719px) {
+		.colophon {
+			padding-bottom: 88px;
+		}
+	}
 </style>

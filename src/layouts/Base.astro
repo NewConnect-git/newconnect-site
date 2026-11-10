@@ -364,8 +364,9 @@ const socialItems = social?.data?.items ?? [];
 		flex: none;
 	}
 
-	/* Slashes between items, as in the reference; not read aloud */
-	.masthead__nav li + li::before {
+	/* Slashes between items, as in the reference; not read aloud. Set after
+	   each item so a wrapped line on phones never starts with one. */
+	.masthead__nav li:not(:last-child)::after {
 		content: "/" / "";
 		padding-inline: 4px;
 		color: var(--color-muted);
@@ -393,12 +394,20 @@ const socialItems = social?.data?.items ?? [];
 			width: 100%;
 		}
 
+		/* Wrap the menu onto more lines instead of hiding items off-screen */
+		.masthead__nav ul {
+			flex-wrap: wrap;
+			overflow-x: visible;
+		}
+
 		.masthead__nav a {
+			padding: 4px 0;
 			font-size: 0.9375rem;
 		}
 
-		.masthead__nav li:first-child a {
-			padding-left: 0;
+		/* Spacing lives in the slash, so every line starts flush left */
+		.masthead__nav li:not(:last-child)::after {
+			padding-inline: 8px;
 		}
 	}
 

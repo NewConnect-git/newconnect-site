@@ -218,9 +218,24 @@ const hasSide = bluesky.posts.length > 0 || morePosts.length > 0;
 </Base>
 
 <style>
+	/* minmax(0, 1fr) everywhere: a long unbroken string in a feed item
+	   (e.g. "■■■■…" in a YouTube description) must not widen the page. */
+	.front,
+	.lead,
+	.roundup__grid,
+	.roundup-lead {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
 	.front {
 		display: grid;
 		gap: 32px;
+	}
+
+	.front__main,
+	.front__side {
+		min-width: 0;
+		overflow-wrap: anywhere;
 	}
 
 	@media (min-width: 960px) {

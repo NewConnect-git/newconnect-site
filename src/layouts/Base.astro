@@ -58,6 +58,11 @@ const siteUrl = (settings.data.url || Astro.url.origin).replace(/\/$/, "");
 const canonicalUrl =
 	canonical ?? (robots?.includes("noindex") ? undefined : `${siteUrl}${currentPath}`);
 
+// Share image: the page's own, else the admin's default (Settings > SEO, which
+// EmDashHead applies), else the newspaper card in public/og-default.png.
+const shareImage =
+	image || (settings.data.seo?.defaultOgImage?.url ? undefined : `${siteUrl}/og-default.png`);
+
 const pageCtx = createPublicPageContext({
 	Astro,
 	kind: content ? "content" : "custom",
@@ -66,9 +71,9 @@ const pageCtx = createPublicPageContext({
 	pageTitle: pageTitle ?? title,
 	description,
 	canonical: canonicalUrl,
-	image,
+	image: shareImage,
 	content,
-	seo: { ogImage: image, robots },
+	seo: { ogImage: shareImage, robots },
 	articleMeta: { publishedTime, modifiedTime, author },
 	siteName: siteTitle,
 });

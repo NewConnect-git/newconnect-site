@@ -38,6 +38,8 @@ export default defineConfig({
 		"/category/[slug]": { ...LONG_CACHE, tags: ["posts"] },
 		"/tag/[slug]": { ...LONG_CACHE, tags: ["posts"] },
 		"/rss.xml": { ...LONG_CACHE, tags: ["posts"] },
+		// Redirects to the admin's favicon; an hour, as a settings change sends no purge
+		"/favicon.ico": { maxAge: 3600, swr: 86_400 },
 	},
 	image: {
 		layout: "constrained",

@@ -113,9 +113,16 @@ function buildPost(week: DigestWeek, items: DigestItem[]) {
 		...(videos.length ? [textBlock("h2", "動画"), ...videos.flatMap(itemBlocks)] : []),
 		...(articles.length ? [textBlock("h2", "記事"), ...articles.flatMap(itemBlocks)] : []),
 	];
+	// The excerpt is the meta description in search results and shares, so it
+	// names the first two items, e.g. …をまとめました。「A」「B」ほか。
+	const highlights = [...videos, ...articles]
+		.slice(0, 2)
+		.map((item) => `「${truncate(item.title, 32)}」`)
+		.join("");
+	const excerpt = `${intro}${highlights}${items.length > 2 ? "ほか。" : ""}`;
 	return {
 		title: `週刊まとめ ${digestRange(week)}`,
-		excerpt: intro,
+		excerpt,
 		content,
 		videos: videos.length,
 		articles: articles.length,

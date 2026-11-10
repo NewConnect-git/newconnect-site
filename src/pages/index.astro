@@ -167,7 +167,7 @@ const hasSide = bluesky.posts.length > 0 || morePosts.length > 0;
 		<aside class="front__side" aria-label="サイドバー">
 			{
 				bluesky.posts.length > 0 && (
-					<section class="block side-bluesky" aria-labelledby="bluesky-title">
+					<section class="block" aria-labelledby="bluesky-title">
 						<div class="section-head">
 							<h2 id="bluesky-title" class="section-head__title">更新情報</h2>
 							<span class="section-head__note">Bluesky</span>
@@ -236,18 +236,6 @@ const hasSide = bluesky.posts.length > 0 || morePosts.length > 0;
 	.front__side {
 		min-width: 0;
 		overflow-wrap: anywhere;
-	}
-
-	/* On phones the Bluesky updates live in the header menu instead */
-	@media (max-width: 719px) {
-		.side-bluesky,
-		.front__side:has(> .side-bluesky:only-child) {
-			display: none;
-		}
-
-		.side-bluesky + .block {
-			margin-top: 0;
-		}
 	}
 
 	@media (min-width: 960px) {

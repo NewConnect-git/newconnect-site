@@ -4,8 +4,6 @@ import { EmDashHead, EmDashBodyStart, EmDashBodyEnd } from "emdash/ui";
 import { createPublicPageContext } from "emdash/page";
 import { Font } from "astro:assets";
 import "../styles/theme.css";
-import { loadBluesky } from "../utils/feed";
-import { formatStamp, truncate } from "../utils/format";
 
 interface Props {
 	title: string;
@@ -39,19 +37,16 @@ const {
 	front = false,
 } = Astro.props;
 
-const [settings, primary, footer, social, bluesky] = await Promise.all([
+const [settings, primary, footer, social] = await Promise.all([
 	getSiteSettingsWithCacheHint(),
 	getMenuWithCacheHint("primary"),
 	getMenuWithCacheHint("footer"),
 	getMenuWithCacheHint("social"),
-	// Shown in the phone menu on every page
-	loadBluesky(5),
 ]);
 if (Astro.cache?.enabled) {
 	for (const result of [settings, primary, footer, social]) {
 		if (result?.cacheHint) Astro.cache.set(result.cacheHint);
 	}
-	for (const hint of bluesky.cacheHints) Astro.cache.set(hint);
 }
 
 const siteTitle = settings.data.title ?? "NewConnect";
@@ -134,6 +129,23 @@ const socialItems = social?.data?.items ?? [];
 					)
 				}
 
+				<button type="button" class="theme-toggle" id="theme-toggle">
+					<svg class="theme-toggle__moon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+						<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor" />
+					</svg>
+					<svg class="theme-toggle__sun" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+						<circle cx="12" cy="12" r="4.5" fill="currentColor" />
+						<path
+							d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M4.6 19.4l2.1-2.1M17.3 6.7l2.1-2.1"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+						/>
+					</svg>
+					<span class="theme-toggle__to-dark">ダークモード</span>
+					<span class="theme-toggle__to-light">ライトモード</span>
+				</button>
+
 				<button
 					type="button"
 					class="masthead__burger"
@@ -148,29 +160,13 @@ const socialItems = social?.data?.items ?? [];
 				<!-- On a PC this wrapper disappears (display: contents) and its parts sit
 				     in the header grid; on a phone it is the panel the burger opens. -->
 				<div class="masthead__panel" id="site-menu">
-				<div class="masthead__strip">
-					<button type="button" class="theme-toggle" id="theme-toggle">
-						<svg class="theme-toggle__moon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-							<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor" />
-						</svg>
-						<svg class="theme-toggle__sun" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-							<circle cx="12" cy="12" r="4.5" fill="currentColor" />
-							<path
-								d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M4.6 19.4l2.1-2.1M17.3 6.7l2.1-2.1"
-								stroke="currentColor"
-								stroke-width="2"
-								stroke-linecap="round"
-							/>
-						</svg>
-						<span class="theme-toggle__to-dark">ダークモード</span>
-						<span class="theme-toggle__to-light">ライトモード</span>
-					</button>
-					<form method="get" action="/search" role="search" class="masthead__search">
-						<label for="site-search" class="sr-only">サイト内を検索</label>
-						<input id="site-search" type="search" name="q" placeholder="記事を検索" />
-						<button type="submit">検索</button>
-					</form>
-				</div>
+					<div class="masthead__strip">
+						<form method="get" action="/search" role="search" class="masthead__search">
+							<label for="site-search" class="sr-only">サイト内を検索</label>
+							<input id="site-search" type="search" name="q" placeholder="記事を検索" />
+							<button type="submit">検索</button>
+						</form>
+					</div>
 
 					{
 						primaryItems.length > 0 && (
@@ -190,26 +186,6 @@ const socialItems = social?.data?.items ?? [];
 									))}
 								</ul>
 							</nav>
-						)
-					}
-
-					{
-						bluesky.posts.length > 0 && (
-							<section class="menu-bluesky" aria-labelledby="menu-bluesky-title">
-								<h2 id="menu-bluesky-title" class="menu-bluesky__title">
-									更新情報 <span>Bluesky</span>
-								</h2>
-								<ul>
-									{bluesky.posts.map((post) => (
-										<li>
-											<a href={post.url} rel="noopener">
-												<span>{truncate(post.text, 60)}</span>
-												<time datetime={post.postedAt.toISOString()}>{formatStamp(post.postedAt)}</time>
-											</a>
-										</li>
-									))}
-								</ul>
-							</section>
 						)
 					}
 				</div>
@@ -312,16 +288,16 @@ const socialItems = social?.data?.items ?? [];
 		margin-bottom: 28px;
 	}
 
-	/* PC: search and theme switch in a strip at the top right, then the site
-	   name on the left and the menu on the right, with one rule underneath. */
+	/* PC: theme switch and search at the top right, then the site name on the
+	   left and the menu on the right, with one rule underneath. */
 	.masthead__grid {
 		display: grid;
-		grid-template-columns: auto minmax(0, 1fr);
+		grid-template-columns: auto minmax(0, 1fr) auto auto;
 		grid-template-areas:
-			"strip strip"
-			"title nav";
+			". . theme strip"
+			"title nav nav nav";
 		align-items: center;
-		column-gap: 24px;
+		column-gap: 12px;
 	}
 
 	.masthead__grid::after {
@@ -334,8 +310,7 @@ const socialItems = social?.data?.items ?? [];
 		display: contents;
 	}
 
-	.masthead__burger,
-	.menu-bluesky {
+	.masthead__burger {
 		display: none;
 	}
 
@@ -354,6 +329,7 @@ const socialItems = social?.data?.items ?? [];
 	.theme-toggle {
 		display: inline-flex;
 		align-items: center;
+		grid-area: theme;
 		gap: 6px;
 		min-height: 30px;
 		padding: 0 10px;
@@ -361,6 +337,8 @@ const socialItems = social?.data?.items ?? [];
 		background: var(--color-surface);
 		color: var(--color-text);
 		font: inherit;
+		font-family: var(--font-sans);
+		font-size: 0.8125rem;
 		cursor: pointer;
 	}
 
@@ -468,9 +446,9 @@ const socialItems = social?.data?.items ?? [];
 		color: var(--color-brand);
 	}
 
-	/* Phone: the header keeps only the site name and a menu button, and stays
-	   at the top while scrolling. Search, theme switch, menu and Bluesky
-	   updates open in a panel under it. */
+	/* Phone: the header keeps the site name, a theme icon and a menu button,
+	   and stays at the top while scrolling. Search and the page tabs open in
+	   a panel under it. */
 	@media (max-width: 719px) {
 		:global(html) {
 			scroll-padding-top: 64px;
@@ -485,10 +463,11 @@ const socialItems = social?.data?.items ?? [];
 		}
 
 		.masthead__grid {
-			grid-template-columns: minmax(0, 1fr) auto;
+			grid-template-columns: minmax(0, 1fr) auto auto;
 			grid-template-areas:
-				"title burger"
-				"panel panel";
+				"title theme burger"
+				"panel panel panel";
+			column-gap: 0;
 		}
 
 		.masthead__title {
@@ -565,16 +544,8 @@ const socialItems = social?.data?.items ?? [];
 			display: block;
 		}
 
-		/* Search first, full width, then the theme switch */
-		.masthead__strip {
-			flex-direction: column;
-			align-items: stretch;
-			gap: 10px;
-			font-size: 0.9375rem;
-		}
-
 		.masthead__search {
-			order: -1;
+			flex: 1;
 		}
 
 		.masthead__search input {
@@ -588,9 +559,28 @@ const socialItems = social?.data?.items ?? [];
 			padding-inline: 16px;
 		}
 
+		/* Theme switch as an icon only; its label stays for screen readers */
 		.theme-toggle {
-			align-self: flex-start;
-			min-height: 40px;
+			justify-content: center;
+			width: 44px;
+			height: 44px;
+			padding: 0;
+			border: 0;
+			background: none;
+		}
+
+		.theme-toggle svg {
+			width: 20px;
+			height: 20px;
+		}
+
+		.theme-toggle span {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			overflow: hidden;
+			clip: rect(0 0 0 0);
+			white-space: nowrap;
 		}
 
 		/* Page tabs as a plain list */
@@ -621,52 +611,6 @@ const socialItems = social?.data?.items ?? [];
 			padding: 12px 0;
 			font-size: 1rem;
 			white-space: normal;
-		}
-
-		.menu-bluesky {
-			display: block;
-			margin-top: 24px;
-		}
-
-		.menu-bluesky__title {
-			display: flex;
-			align-items: baseline;
-			gap: 8px;
-			padding-block: 6px;
-			border-top: 3px double var(--color-rule);
-			border-bottom: 1px solid var(--color-rule);
-			font-size: 1rem;
-			font-weight: 900;
-			letter-spacing: 0.08em;
-		}
-
-		.menu-bluesky__title span {
-			margin-left: auto;
-			color: var(--color-muted);
-			font-family: var(--font-sans);
-			font-size: 0.8125rem;
-			font-weight: 400;
-			letter-spacing: 0;
-		}
-
-		.menu-bluesky li + li {
-			border-top: 1px solid var(--color-border);
-		}
-
-		.menu-bluesky a {
-			display: grid;
-			gap: 2px;
-			padding-block: 10px;
-			font-size: 0.9375rem;
-			line-height: var(--leading-snug);
-			text-decoration: none;
-			overflow-wrap: anywhere;
-		}
-
-		.menu-bluesky time {
-			color: var(--color-muted);
-			font-family: var(--font-sans);
-			font-size: 0.8125rem;
 		}
 	}
 

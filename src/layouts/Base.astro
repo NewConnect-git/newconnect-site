@@ -4,6 +4,8 @@ import { EmDashHead, EmDashBodyStart, EmDashBodyEnd } from "emdash/ui";
 import { createPublicPageContext } from "emdash/page";
 import { Font } from "astro:assets";
 import "../styles/theme.css";
+import { loadBluesky } from "../utils/feed";
+import { formatStamp, truncate } from "../utils/format";
 
 interface Props {
 	title: string;
@@ -37,16 +39,19 @@ const {
 	front = false,
 } = Astro.props;
 
-const [settings, primary, footer, social] = await Promise.all([
+const [settings, primary, footer, social, bluesky] = await Promise.all([
 	getSiteSettingsWithCacheHint(),
 	getMenuWithCacheHint("primary"),
 	getMenuWithCacheHint("footer"),
 	getMenuWithCacheHint("social"),
+	// Shown in the phone menu on every page
+	loadBluesky(5),
 ]);
 if (Astro.cache?.enabled) {
 	for (const result of [settings, primary, footer, social]) {
 		if (result?.cacheHint) Astro.cache.set(result.cacheHint);
 	}
+	for (const hint of bluesky.cacheHints) Astro.cache.set(hint);
 }
 
 const siteTitle = settings.data.title ?? "NewConnect";
@@ -115,8 +120,34 @@ const socialItems = social?.data?.items ?? [];
 		<EmDashBodyStart page={pageCtx} />
 		<a href="#main" class="skip">本文へ移動</a>
 
-		<header class:list={["masthead", { "masthead--front": front }]}>
-			<div class="wrap">
+		<header class:list={["masthead", { "masthead--front": front }]} id="masthead">
+			<div class="wrap masthead__grid">
+				{
+					front ? (
+						<h1 class="masthead__title">
+							<a href="/" aria-current="page">{siteTitle}</a>
+						</h1>
+					) : (
+						<p class="masthead__title">
+							<a href="/">{siteTitle}</a>
+						</p>
+					)
+				}
+
+				<button
+					type="button"
+					class="masthead__burger"
+					id="menu-button"
+					aria-expanded="false"
+					aria-controls="site-menu"
+				>
+					<span class="masthead__burger-icon" aria-hidden="true"></span>
+					<span class="sr-only">メニュー</span>
+				</button>
+
+				<!-- On a PC this wrapper disappears (display: contents) and its parts sit
+				     in the header grid; on a phone it is the panel the burger opens. -->
+				<div class="masthead__panel" id="site-menu">
 				<div class="masthead__strip">
 					<button type="button" class="theme-toggle" id="theme-toggle">
 						<svg class="theme-toggle__moon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
@@ -141,19 +172,6 @@ const socialItems = social?.data?.items ?? [];
 					</form>
 				</div>
 
-				<div class="masthead__bar">
-					{
-						front ? (
-							<h1 class="masthead__title">
-								<a href="/" aria-current="page">{siteTitle}</a>
-							</h1>
-						) : (
-							<p class="masthead__title">
-								<a href="/">{siteTitle}</a>
-							</p>
-						)
-					}
-
 					{
 						primaryItems.length > 0 && (
 							<nav class="masthead__nav" aria-label="メインメニュー">
@@ -172,6 +190,26 @@ const socialItems = social?.data?.items ?? [];
 									))}
 								</ul>
 							</nav>
+						)
+					}
+
+					{
+						bluesky.posts.length > 0 && (
+							<section class="menu-bluesky" aria-labelledby="menu-bluesky-title">
+								<h2 id="menu-bluesky-title" class="menu-bluesky__title">
+									更新情報 <span>Bluesky</span>
+								</h2>
+								<ul>
+									{bluesky.posts.map((post) => (
+										<li>
+											<a href={post.url} rel="noopener">
+												<span>{truncate(post.text, 60)}</span>
+												<time datetime={post.postedAt.toISOString()}>{formatStamp(post.postedAt)}</time>
+											</a>
+										</li>
+									))}
+								</ul>
+							</section>
 						)
 					}
 				</div>
@@ -231,6 +269,26 @@ const socialItems = social?.data?.items ?? [];
 				media.addEventListener("change", sync);
 				sync();
 			})();
+
+			// Phone menu: the burger opens the panel; Esc closes it.
+			(function () {
+				var header = document.getElementById("masthead");
+				var button = document.getElementById("menu-button");
+				if (!header || !button) return;
+				var setOpen = function (open) {
+					header.toggleAttribute("data-open", open);
+					button.setAttribute("aria-expanded", String(open));
+				};
+				button.addEventListener("click", function () {
+					setOpen(!header.hasAttribute("data-open"));
+				});
+				document.addEventListener("keydown", function (event) {
+					if (event.key === "Escape" && header.hasAttribute("data-open")) {
+						setOpen(false);
+						button.focus();
+					}
+				});
+			})();
 		</script>
 	</body>
 </html>
@@ -254,8 +312,35 @@ const socialItems = social?.data?.items ?? [];
 		margin-bottom: 28px;
 	}
 
-	/* Only the search box, small, at the top right */
+	/* PC: search and theme switch in a strip at the top right, then the site
+	   name on the left and the menu on the right, with one rule underneath. */
+	.masthead__grid {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr);
+		grid-template-areas:
+			"strip strip"
+			"title nav";
+		align-items: center;
+		column-gap: 24px;
+	}
+
+	.masthead__grid::after {
+		content: "";
+		grid-column: 1 / -1;
+		border-bottom: 1px solid var(--color-rule);
+	}
+
+	.masthead__panel {
+		display: contents;
+	}
+
+	.masthead__burger,
+	.menu-bluesky {
+		display: none;
+	}
+
 	.masthead__strip {
+		grid-area: strip;
 		display: flex;
 		justify-content: flex-end;
 		align-items: center;
@@ -323,19 +408,9 @@ const socialItems = social?.data?.items ?? [];
 		cursor: pointer;
 	}
 
-	/* Site name on the left, menu on the right, one rule underneath */
-	.masthead__bar {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: space-between;
-		gap: 4px 24px;
-		padding-block: 10px 8px;
-		border-bottom: 1px solid var(--color-rule);
-	}
-
 	.masthead__title {
-		flex: none;
+		grid-area: title;
+		padding-block: 10px 8px;
 		font-family: var(--font-masthead);
 		font-size: clamp(1.75rem, 5vw, 2.25rem);
 		font-weight: 900;
@@ -348,14 +423,18 @@ const socialItems = social?.data?.items ?? [];
 	}
 
 	.masthead__nav {
+		grid-area: nav;
+		justify-self: end;
 		min-width: 0;
+		max-width: 100%;
 	}
 
+	/* On narrow PC/tablet widths the items wrap rather than scroll out of view */
 	.masthead__nav ul {
 		display: flex;
+		flex-wrap: wrap;
+		justify-content: flex-end;
 		align-items: center;
-		overflow-x: auto;
-		scrollbar-width: none;
 	}
 
 	.masthead__nav li {
@@ -389,25 +468,205 @@ const socialItems = social?.data?.items ?? [];
 		color: var(--color-brand);
 	}
 
+	/* Phone: the header keeps only the site name and a menu button, and stays
+	   at the top while scrolling. Search, theme switch, menu and Bluesky
+	   updates open in a panel under it. */
 	@media (max-width: 719px) {
-		.masthead__nav {
-			width: 100%;
+		:global(html) {
+			scroll-padding-top: 64px;
 		}
 
-		/* Wrap the menu onto more lines instead of hiding items off-screen */
-		.masthead__nav ul {
-			flex-wrap: wrap;
-			overflow-x: visible;
+		.masthead {
+			position: sticky;
+			top: 0;
+			z-index: 20;
+			padding-top: 0;
+			background: var(--color-bg);
 		}
 
-		.masthead__nav a {
-			padding: 4px 0;
+		.masthead__grid {
+			grid-template-columns: minmax(0, 1fr) auto;
+			grid-template-areas:
+				"title burger"
+				"panel panel";
+		}
+
+		.masthead__title {
+			padding-block: 10px;
+			font-size: 1.75rem;
+		}
+
+		.masthead__burger {
+			grid-area: burger;
+			display: grid;
+			place-items: center;
+			width: 44px;
+			height: 44px;
+			margin-right: -10px;
+			border: 0;
+			background: none;
+			color: var(--color-text);
+			cursor: pointer;
+		}
+
+		/* Three bars, turning into a cross while the menu is open */
+		.masthead__burger-icon,
+		.masthead__burger-icon::before,
+		.masthead__burger-icon::after {
+			display: block;
+			width: 22px;
+			height: 2px;
+			background: currentColor;
+			transition: transform var(--transition-fast), background var(--transition-fast);
+		}
+
+		.masthead__burger-icon {
+			position: relative;
+		}
+
+		.masthead__burger-icon::before,
+		.masthead__burger-icon::after {
+			content: "";
+			position: absolute;
+			left: 0;
+		}
+
+		.masthead__burger-icon::before {
+			top: -7px;
+		}
+
+		.masthead__burger-icon::after {
+			top: 7px;
+		}
+
+		.masthead__burger[aria-expanded="true"] .masthead__burger-icon {
+			background: transparent;
+		}
+
+		.masthead__burger[aria-expanded="true"] .masthead__burger-icon::before {
+			transform: translateY(7px) rotate(45deg);
+		}
+
+		.masthead__burger[aria-expanded="true"] .masthead__burger-icon::after {
+			transform: translateY(-7px) rotate(-45deg);
+		}
+
+		.masthead__panel {
+			grid-area: panel;
+			display: none;
+			max-height: calc(100dvh - 64px);
+			overflow-y: auto;
+			overscroll-behavior: contain;
+			padding-block: 12px 20px;
+			border-top: 1px solid var(--color-border);
+		}
+
+		.masthead[data-open] .masthead__panel {
+			display: block;
+		}
+
+		/* Search first, full width, then the theme switch */
+		.masthead__strip {
+			flex-direction: column;
+			align-items: stretch;
+			gap: 10px;
 			font-size: 0.9375rem;
 		}
 
-		/* Spacing lives in the slash, so every line starts flush left */
+		.masthead__search {
+			order: -1;
+		}
+
+		.masthead__search input {
+			flex: 1;
+			width: auto;
+			min-height: 40px;
+		}
+
+		.masthead__search button {
+			min-height: 40px;
+			padding-inline: 16px;
+		}
+
+		.theme-toggle {
+			align-self: flex-start;
+			min-height: 40px;
+		}
+
+		/* Page tabs as a plain list */
+		.masthead__nav {
+			justify-self: stretch;
+			margin-top: 16px;
+		}
+
+		.masthead__nav ul {
+			display: block;
+			overflow: visible;
+		}
+
+		.masthead__nav li {
+			border-top: 1px solid var(--color-border);
+		}
+
+		.masthead__nav li:last-child {
+			border-bottom: 1px solid var(--color-border);
+		}
+
 		.masthead__nav li:not(:last-child)::after {
-			padding-inline: 8px;
+			content: none;
+		}
+
+		.masthead__nav a {
+			width: 100%;
+			padding: 12px 0;
+			font-size: 1rem;
+			white-space: normal;
+		}
+
+		.menu-bluesky {
+			display: block;
+			margin-top: 24px;
+		}
+
+		.menu-bluesky__title {
+			display: flex;
+			align-items: baseline;
+			gap: 8px;
+			padding-block: 6px;
+			border-top: 3px double var(--color-rule);
+			border-bottom: 1px solid var(--color-rule);
+			font-size: 1rem;
+			font-weight: 900;
+			letter-spacing: 0.08em;
+		}
+
+		.menu-bluesky__title span {
+			margin-left: auto;
+			color: var(--color-muted);
+			font-family: var(--font-sans);
+			font-size: 0.8125rem;
+			font-weight: 400;
+			letter-spacing: 0;
+		}
+
+		.menu-bluesky li + li {
+			border-top: 1px solid var(--color-border);
+		}
+
+		.menu-bluesky a {
+			display: grid;
+			gap: 2px;
+			padding-block: 10px;
+			font-size: 0.9375rem;
+			line-height: var(--leading-snug);
+			text-decoration: none;
+			overflow-wrap: anywhere;
+		}
+
+		.menu-bluesky time {
+			color: var(--color-muted);
+			font-family: var(--font-sans);
+			font-size: 0.8125rem;
 		}
 	}
 

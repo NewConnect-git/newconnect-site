@@ -376,7 +376,8 @@ const hasSide = bluesky.posts.length > 0 || morePosts.length > 0;
 
 	.lead__media :global(img) {
 		width: 100%;
-		aspect-ratio: 3 / 2;
+		/* Same shape as the auto thumbnail and share card (1200×630), so its text is not cut off */
+		aspect-ratio: 40 / 21;
 		object-fit: cover;
 		filter: grayscale(0.15) contrast(1.05);
 	}

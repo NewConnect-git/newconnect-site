@@ -3,6 +3,7 @@ import { cacheCloudflare } from "@astrojs/cloudflare/cache";
 import react from "@astrojs/react";
 import { d1, r2 } from "@emdash-cms/cloudflare";
 import { defineConfig } from "astro/config";
+import autoThumbnail from "auto-thumbnail";
 import blueskyFeed from "bluesky-feed";
 import rssFeed from "rss-feed";
 import emdash from "emdash/astro";
@@ -62,7 +63,9 @@ export default defineConfig({
 			// Each does nothing until it is configured in the admin.
 			// weekly-digest (in this repo) turns each week's feed_items into one
 			// post every Saturday at 9:00 JST.
-			plugins: [rssFeed, blueskyFeed, weeklyDigest()],
+			// auto-thumbnail keeps the thumbnail design (admin → サムネイル);
+			// Post To EmDash and Notion To EmDash read it and draw the image.
+			plugins: [rssFeed, blueskyFeed, weeklyDigest(), autoThumbnail],
 		}),
 	],
 	devToolbar: { enabled: false },

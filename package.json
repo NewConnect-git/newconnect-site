@@ -19,6 +19,7 @@
     "@astrojs/react": "^7.0.0",
     "@emdash-cms/cloudflare": "^1.4.0",
     "astro": "^7.3.2",
+    "auto-thumbnail": "github:RieTamura/Auto-Thumbnail",
     "bluesky-feed": "github:RieTamura/Bluesky-To-EmDash",
     "emdash": "^1.4.0",
     "react": "19.2.4",

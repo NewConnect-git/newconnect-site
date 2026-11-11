@@ -2,7 +2,6 @@
 import { getMenuWithCacheHint, getSiteSettingsWithCacheHint } from "emdash";
 import { EmDashHead, EmDashBodyStart, EmDashBodyEnd } from "emdash/ui";
 import { createPublicPageContext } from "emdash/page";
-import { Font } from "astro:assets";
 import "../styles/theme.css";
 
 interface Props {
@@ -103,7 +102,6 @@ const socialItems = social?.data?.items ?? [];
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<Font cssVariable="--font-masthead" />
 		<title>{fullTitle}</title>
 		<script is:inline>
 			// Apply the reader's saved theme before the first paint.
@@ -393,11 +391,11 @@ const socialItems = social?.data?.items ?? [];
 	.masthead__title {
 		grid-area: title;
 		padding-block: 10px 8px;
-		font-family: var(--font-masthead);
+		font-family: var(--font-sans);
 		font-size: clamp(1.75rem, 5vw, 2.25rem);
 		font-weight: 900;
 		line-height: 1.1;
-		letter-spacing: 0.01em;
+		letter-spacing: -0.01em;
 	}
 
 	.masthead__title a {
@@ -636,7 +634,7 @@ const socialItems = social?.data?.items ?? [];
 	}
 
 	.colophon__title {
-		font-family: var(--font-masthead);
+		font-family: var(--font-sans);
 		font-size: 1.5rem;
 		font-weight: 900;
 	}

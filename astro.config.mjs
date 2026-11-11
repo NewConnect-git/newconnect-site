@@ -2,7 +2,7 @@ import cloudflare from "@astrojs/cloudflare";
 import { cacheCloudflare } from "@astrojs/cloudflare/cache";
 import react from "@astrojs/react";
 import { d1, r2 } from "@emdash-cms/cloudflare";
-import { defineConfig, fontProviders } from "astro/config";
+import { defineConfig } from "astro/config";
 import blueskyFeed from "bluesky-feed";
 import rssFeed from "rss-feed";
 import emdash from "emdash/astro";
@@ -64,16 +64,6 @@ export default defineConfig({
 			// post every Saturday at 9:00 JST.
 			plugins: [rssFeed, blueskyFeed, weeklyDigest()],
 		}),
-	],
-	fonts: [
-		{
-			provider: fontProviders.google(),
-			name: "Playfair Display",
-			cssVariable: "--font-masthead",
-			weights: [900],
-			subsets: ["latin"],
-			fallbacks: ["serif"],
-		},
 	],
 	devToolbar: { enabled: false },
 });

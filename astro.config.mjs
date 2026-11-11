@@ -68,14 +68,6 @@ export default defineConfig({
 	fonts: [
 		{
 			provider: fontProviders.google(),
-			name: "Noto Serif JP",
-			cssVariable: "--font-serif",
-			weights: [400, 700, 900],
-			subsets: ["japanese", "latin"],
-			fallbacks: ["serif"],
-		},
-		{
-			provider: fontProviders.google(),
 			name: "Playfair Display",
 			cssVariable: "--font-masthead",
 			weights: [900],

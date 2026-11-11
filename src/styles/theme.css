@@ -22,9 +22,12 @@
 	--color-on-brand: #fff;
 	--color-accent: #9b1c1c;
 
-	--font-body: var(--font-serif);
+	--font-body: var(--font-sans);
 	--font-mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
-	--font-sans: "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+	/* One sans-serif stack for the whole site, as on Zenn: each OS uses its own
+	   Japanese UI font, so nothing has to be downloaded. */
+	--font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue",
+		"Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
 
 	--font-size-sm: 0.875rem;
 	--font-size-base: 1rem;
@@ -177,7 +180,7 @@ ol {
 
 .section-head__title {
 	font-size: 1.125rem;
-	font-weight: 900;
+	font-weight: 700;
 	letter-spacing: 0.08em;
 }
 

@@ -10,6 +10,11 @@
   those properties with !important too.
 */
 
+/* Name the layer order here too: this file is often bundled before
+   theme.css, and the first @layer statement fixes the order. Without it the
+   reset (margin: 0) would beat the paragraph spacing below. */
+@layer reset, base;
+
 @layer base {
 	.prose {
 		--prose-color: color-mix(in srgb, var(--color-text) 82%, var(--color-bg));
@@ -29,7 +34,7 @@
 
 		max-width: var(--content-width);
 		font-size: 17px;
-		line-height: 2;
+		line-height: 1.9;
 		color: var(--prose-color);
 		overflow-wrap: break-word;
 	}
@@ -78,7 +83,7 @@
 	.prose h2 {
 		padding-bottom: 6px;
 		border-bottom: 1px solid var(--color-rule);
-		font-weight: 900;
+		font-weight: 700;
 	}
 
 	.prose h3 {

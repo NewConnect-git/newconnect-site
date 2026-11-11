@@ -1,6 +1,6 @@
 # 計画書：Notion To EmDash（Notion のデータベースから記事を投稿する）
 
-> この計画書は RieTamura リポジトリの `design/plan-notion-to-emdash.md` の写しです（2026-11-11）。NewConnect のサイトで使う予定です。本文の「このサイト」「rietamura.com」などは、写した時点のまま rietamura.com を指しています。
+> この計画書は RieTamura リポジトリの `design/plan-notion-to-emdash.md` の写しです（2026-11-11）。NewConnect のサイトで使うので、これからはこちらを更新します（RieTamura 側は更新しません）。本文の「このサイト」「rietamura.com」などは、写した時点のまま rietamura.com を指しています。
 
 作成日：2026-11-06
 

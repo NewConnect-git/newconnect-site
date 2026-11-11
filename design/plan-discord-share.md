@@ -1,6 +1,6 @@
 # 計画書：記事の公開時に Discord へ自動投稿
 
-> この計画書は RieTamura リポジトリの `design/plan-discord-share.md` の写しです（2026-11-11）。NewConnect のサイトで使う予定です。本文の「このサイト」「rietamura.com」などは、写した時点のまま rietamura.com を指しています。
+> この計画書は RieTamura リポジトリの `design/plan-discord-share.md` の写しです（2026-11-11）。NewConnect のサイトで使うので、これからはこちらを更新します（RieTamura 側は更新しません）。本文の「このサイト」「rietamura.com」などは、写した時点のまま rietamura.com を指しています。
 
 作成日：2026-11-06
 

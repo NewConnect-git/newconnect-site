@@ -5,6 +5,7 @@ import { d1, r2 } from "@emdash-cms/cloudflare";
 import { defineConfig } from "astro/config";
 import autoThumbnail from "auto-thumbnail";
 import blueskyFeed from "bluesky-feed";
+import notionToEmdash from "notion-to-emdash";
 import rssFeed from "rss-feed";
 import emdash from "emdash/astro";
 import weeklyDigest from "./src/plugins/weekly-digest/index.ts";
@@ -65,7 +66,10 @@ export default defineConfig({
 			// post every Saturday at 9:00 JST.
 			// auto-thumbnail keeps the thumbnail design (admin → サムネイル);
 			// Post To EmDash and Notion To EmDash read it and draw the image.
-			plugins: [rssFeed, blueskyFeed, weeklyDigest(), autoThumbnail],
+			// notion-to-emdash sends the pages ticked as published in a Notion
+			// database as posts (admin → Notion To EmDash). Its token is stored
+			// encrypted, so the site needs EMDASH_ENCRYPTION_KEY.
+			plugins: [rssFeed, blueskyFeed, weeklyDigest(), autoThumbnail, notionToEmdash],
 		}),
 	],
 	devToolbar: { enabled: false },

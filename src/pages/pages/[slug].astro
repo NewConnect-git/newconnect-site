@@ -31,6 +31,11 @@ const seo = getSeoMeta(page, {
 	canonical={seo.canonical}
 	robots={seo.robots}
 	content={{ collection: "pages", id: page.data.id, slug }}
+	webPage
+	breadcrumbs={[
+		{ name: settings.title ?? "NewConnect", url: "/" },
+		{ name: page.data.title, url: seo.canonical ?? `/pages/${slug}` },
+	]}
 >
 	<article class="wrap page">
 		<h1 class="page__title" {...page.edit.title}>{page.data.title}</h1>

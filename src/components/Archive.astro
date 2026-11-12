@@ -135,6 +135,9 @@ const pageHref = (n: number) => (n === 1 ? basePath : `${basePath}?page=${n}`);
 	}
 
 	.row__media :global(img) {
+		/* A thin edge, so a white thumbnail does not melt into the white page */
+		outline: 1px solid var(--color-border);
+		outline-offset: -1px;
 		width: 100%;
 		/* 1200×630, like the auto thumbnail */
 		aspect-ratio: 40 / 21;

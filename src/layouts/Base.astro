@@ -2,6 +2,7 @@
 import { getMenuWithCacheHint, getSiteSettingsWithCacheHint } from "emdash";
 import { EmDashHead, EmDashBodyStart, EmDashBodyEnd } from "emdash/ui";
 import { createPublicPageContext } from "emdash/page";
+import SocialLinks from "../components/SocialLinks.astro";
 import "../styles/theme.css";
 
 interface Props {
@@ -19,6 +20,10 @@ interface Props {
 	content?: { collection: string; id: string; slug?: string | null };
 	/** The front page shows the big masthead; other pages a compact one. */
 	front?: boolean;
+	/** Trail from the front page to this page, for BreadcrumbList structured data. The last item is this page. */
+	breadcrumbs?: Array<{ name: string; url: string }>;
+	/** Marks a standalone page (not a post) with WebPage structured data. */
+	webPage?: boolean;
 }
 
 const {
@@ -34,6 +39,8 @@ const {
 	author,
 	content,
 	front = false,
+	breadcrumbs,
+	webPage = false,
 } = Astro.props;
 
 const [settings, primary, footer, social] = await Promise.all([
@@ -49,7 +56,11 @@ if (Astro.cache?.enabled) {
 }
 
 const siteTitle = settings.data.title ?? "NewConnect";
-const fullTitle = title === siteTitle ? title : `${title} | ${siteTitle}`;
+// Descriptions written in the admin can hold line breaks; search results show one line.
+const metaDescription = description?.replace(/\s+/g, " ").trim() || undefined;
+// EmDash's getSeoMeta() already ends post and page titles with " | <site>",
+// so the site name is added only when it is not there yet.
+const fullTitle = title === siteTitle || title.endsWith(` | ${siteTitle}`) ? title : `${title} | ${siteTitle}`;
 
 const TRAILING_SLASH = /(?<=.)\/$/;
 const currentPath = Astro.url.pathname.replace(TRAILING_SLASH, "");
@@ -68,7 +79,7 @@ const pageCtx = createPublicPageContext({
 	pageType: type,
 	title: fullTitle,
 	pageTitle: pageTitle ?? title,
-	description,
+	description: metaDescription,
 	canonical: canonicalUrl,
 	image: shareImage,
 	content,
@@ -92,6 +103,48 @@ function isCurrent(url: string): "page" | undefined {
 const isExternal = (url: string) => /^https?:\/\//.test(url) && !url.startsWith(Astro.url.origin);
 
 const year = new Date().getFullYear();
+
+// Structured data EmDash does not add itself (it adds BlogPosting on posts and
+// WebSite elsewhere): the organization on the front page, WebPage on standalone
+// pages, and the breadcrumb trail.
+const absolute = (url: string | undefined | null) => (url ? new URL(url, siteUrl).href : undefined);
+const organizationLogo = absolute(settings.data.logo?.url ?? settings.data.favicon?.url);
+const structuredData: Record<string, unknown>[] = [];
+if (front) {
+	structuredData.push({
+		"@context": "https://schema.org",
+		"@type": "Organization",
+		"@id": `${siteUrl}/#organization`,
+		name: siteTitle,
+		url: `${siteUrl}/`,
+		...(organizationLogo ? { logo: organizationLogo } : {}),
+		...(social?.data?.items?.length ? { sameAs: social.data.items.map((item) => item.url) } : {}),
+	});
+}
+if (webPage && canonicalUrl) {
+	structuredData.push({
+		"@context": "https://schema.org",
+		"@type": "WebPage",
+		name: pageTitle ?? title,
+		...(metaDescription ? { description: metaDescription } : {}),
+		url: canonicalUrl,
+		isPartOf: { "@type": "WebSite", name: siteTitle, url: `${siteUrl}/` },
+	});
+}
+if (breadcrumbs && breadcrumbs.length > 1) {
+	structuredData.push({
+		"@context": "https://schema.org",
+		"@type": "BreadcrumbList",
+		itemListElement: breadcrumbs.map((crumb, index) => ({
+			"@type": "ListItem",
+			position: index + 1,
+			name: crumb.name,
+			item: absolute(crumb.url),
+		})),
+	});
+}
+// "<" is escaped so text from the admin can never close the script tag.
+const structuredDataJson = structuredData.map((data) => JSON.stringify(data).replace(/</g, "\\u003c"));
 const primaryItems = primary?.data?.items ?? [];
 const footerItems = footer?.data?.items ?? [];
 const socialItems = social?.data?.items ?? [];
@@ -111,6 +164,7 @@ const socialItems = social?.data?.items ?? [];
 			} catch (e) {}
 		</script>
 		<EmDashHead page={pageCtx} />
+		{structuredDataJson.map((json) => <script type="application/ld+json" set:html={json} />)}
 		<link rel="alternate" type="application/rss+xml" title={`${siteTitle} の記事`} href="/rss.xml" />
 	</head>
 	<body>
@@ -190,6 +244,7 @@ const socialItems = social?.data?.items ?? [];
 							</nav>
 						)
 					}
+					<SocialLinks items={socialItems} class="masthead__social" />
 				</div>
 				<!-- Phone only: dims the page behind the open menu; a tap closes it. -->
 				<div class="masthead__scrim" id="menu-scrim" aria-hidden="true"></div>
@@ -204,9 +259,9 @@ const socialItems = social?.data?.items ?? [];
 			<div class="wrap">
 				<p class="colophon__title">{siteTitle}</p>
 				{
-					(footerItems.length > 0 || socialItems.length > 0) && (
+					footerItems.length > 0 && (
 						<ul class="colophon__links">
-							{[...footerItems, ...socialItems].map((item) => (
+							{footerItems.map((item) => (
 								<li>
 									<a href={item.url} rel={isExternal(item.url) ? "noopener" : undefined}>
 										{item.label}
@@ -219,6 +274,8 @@ const socialItems = social?.data?.items ?? [];
 						</ul>
 					)
 				}
+				<!-- SNS logos: in the footer on a PC, in the menu on a phone -->
+				<SocialLinks items={socialItems} class="colophon__social" />
 				<p class="colophon__copy">
 					© {year} {siteTitle} · Made with <a href="https://emdashcms.com">EmDash</a>
 				</p>
@@ -327,7 +384,8 @@ const socialItems = social?.data?.items ?? [];
 	}
 
 	.masthead__burger,
-	.masthead__scrim {
+	.masthead__scrim,
+	.masthead :global(.masthead__social) {
 		display: none;
 	}
 
@@ -675,6 +733,12 @@ const socialItems = social?.data?.items ?? [];
 			font-size: 1rem;
 			white-space: normal;
 		}
+
+		/* SNS logos at the bottom of the menu */
+		.masthead :global(.masthead__social) {
+			display: flex;
+			margin: 12px 0 0 -10px;
+		}
 	}
 
 	main {
@@ -713,6 +777,11 @@ const socialItems = social?.data?.items ?? [];
 		padding-block: 6px;
 	}
 
+	.colophon :global(.colophon__social) {
+		justify-content: center;
+		margin-top: 8px;
+	}
+
 	.colophon__copy {
 		margin-top: 12px;
 		color: var(--color-muted);
@@ -722,6 +791,11 @@ const socialItems = social?.data?.items ?? [];
 	@media (max-width: 719px) {
 		.colophon {
 			padding-bottom: 88px;
+		}
+
+		/* On a phone the SNS logos are in the menu instead */
+		.colophon :global(.colophon__social) {
+			display: none;
 		}
 	}
 </style>

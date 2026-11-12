@@ -47,6 +47,11 @@ const others = (recent.error ? [] : recent.entries).filter((entry) => entry.id !
 	image={seo.ogImage}
 	canonical={seo.canonical}
 	robots={seo.robots}
+	breadcrumbs={[
+		{ name: siteTitle, url: "/" },
+		...(category ? [{ name: category.label, url: `/category/${category.slug}` }] : []),
+		{ name: post.data.title, url: seo.canonical ?? `/posts/${slug}` },
+	]}
 	type="article"
 	publishedTime={publishedAt?.toISOString() ?? null}
 	modifiedTime={post.data.updatedAt.toISOString()}
@@ -154,6 +159,9 @@ const others = (recent.error ? [] : recent.entries).filter((entry) => entry.id !
 	}
 
 	.article__media :global(img) {
+		/* A thin edge, so a white thumbnail does not melt into the white page */
+		outline: 1px solid var(--color-border);
+		outline-offset: -1px;
 		width: 100%;
 	}
 

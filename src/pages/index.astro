@@ -414,6 +414,9 @@ const hasSide = bluesky.posts.length > 0 || morePosts.length > 0;
 	}
 
 	.lead__media :global(img) {
+		/* A thin edge, so a white thumbnail does not melt into the white page */
+		outline: 1px solid var(--color-border);
+		outline-offset: -1px;
 		width: 100%;
 		/* Same shape as the auto thumbnail and share card (1200×630), so its text is not cut off */
 		aspect-ratio: 40 / 21;
@@ -488,6 +491,9 @@ const hasSide = bluesky.posts.length > 0 || morePosts.length > 0;
 	}
 
 	.roundup-lead__media img {
+		/* A thin edge, so a white thumbnail does not melt into the white page */
+		outline: 1px solid var(--color-border);
+		outline-offset: -1px;
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
@@ -566,6 +572,9 @@ const hasSide = bluesky.posts.length > 0 || morePosts.length > 0;
 	}
 
 	.roundup-item__thumb img {
+		/* A thin edge, so a white thumbnail does not melt into the white page */
+		outline: 1px solid var(--color-border);
+		outline-offset: -1px;
 		width: 100%;
 		height: 100%;
 		object-fit: cover;

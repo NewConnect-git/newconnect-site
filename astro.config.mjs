@@ -5,6 +5,7 @@ import { d1, r2 } from "@emdash-cms/cloudflare";
 import { defineConfig } from "astro/config";
 import autoThumbnail from "auto-thumbnail";
 import blueskyFeed from "bluesky-feed";
+import blueskyShare from "bluesky-share";
 import notionToEmdash from "notion-to-emdash";
 import rssFeed from "rss-feed";
 import emdash from "emdash/astro";
@@ -69,7 +70,9 @@ export default defineConfig({
 			// notion-to-emdash sends the pages ticked as published in a Notion
 			// database as posts (admin → Notion To EmDash). Its token is stored
 			// encrypted, so the site needs EMDASH_ENCRYPTION_KEY.
-			plugins: [rssFeed, blueskyFeed, weeklyDigest(), autoThumbnail, notionToEmdash],
+			// bluesky-share posts each post to Bluesky once, when it is first
+			// published (admin → Bluesky Share). Its app password is encrypted too.
+			plugins: [rssFeed, blueskyFeed, weeklyDigest(), autoThumbnail, notionToEmdash, blueskyShare],
 		}),
 	],
 	devToolbar: { enabled: false },

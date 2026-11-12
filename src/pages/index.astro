@@ -1,7 +1,9 @@
 ---
 import { getEmDashCollection, getSiteSettings } from "emdash";
 import { Image } from "emdash/ui";
+import TermLinks from "../components/TermLinks.astro";
 import Base from "../layouts/Base.astro";
+import { loadSiteTerms } from "../utils/terms";
 import { digestWeekFromSlug, inWeek, isDigestSlug, upcomingDigestWeek } from "../utils/digest";
 import { loadBluesky, loadFeedItems, WEEK_MS, withinWeek } from "../utils/feed";
 import { formatDate, formatShortDate, formatStamp, SOURCE_LABELS, truncate } from "../utils/format";
@@ -9,15 +11,16 @@ import { formatDate, formatShortDate, formatStamp, SOURCE_LABELS, truncate } fro
 const now = new Date();
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-const [posts, feed, bluesky, settings] = await Promise.all([
+const [posts, feed, bluesky, settings, siteTerms] = await Promise.all([
 	getEmDashCollection("posts", { orderBy: { published_at: "desc" }, limit: 12 }),
 	loadFeedItems(),
 	loadBluesky(5),
 	getSiteSettings(),
+	loadSiteTerms(),
 ]);
 if (Astro.cache?.enabled) {
 	if (!posts.error) Astro.cache.set(posts.cacheHint);
-	for (const hint of [...feed.cacheHints, ...bluesky.cacheHints]) Astro.cache.set(hint);
+	for (const hint of [...feed.cacheHints, ...bluesky.cacheHints, ...siteTerms.cacheHints]) Astro.cache.set(hint);
 }
 
 const recentPosts = posts.error ? [] : posts.entries;
@@ -52,7 +55,8 @@ const nextDigest = upcomingDigestWeek(now);
 const nextDigestCount = feed.items.filter((item) => inWeek(item.postedAt, nextDigest)).length;
 
 // No Bluesky posts and no other posts yet: drop the sidebar column entirely.
-const hasSide = bluesky.posts.length > 0 || morePosts.length > 0;
+const hasTerms = siteTerms.categories.length > 0 || siteTerms.tags.length > 0;
+const hasSide = bluesky.posts.length > 0 || morePosts.length > 0 || hasTerms;
 ---
 
 <Base
@@ -210,6 +214,9 @@ const hasSide = bluesky.posts.length > 0 || morePosts.length > 0;
 				)
 			}
 
+			{/* Categories and tags, under the Bluesky news. On a phone they are in the menu instead. */}
+			<TermLinks categories={siteTerms.categories} tags={siteTerms.tags} class="block front__terms" />
+
 			{
 				morePosts.length > 0 && (
 					<section class="block" aria-labelledby="posts-title">
@@ -361,6 +368,19 @@ const hasSide = bluesky.posts.length > 0 || morePosts.length > 0;
 	.block + .block,
 	.lead + .block {
 		margin-top: 36px;
+	}
+
+	/* Categories and tags in the sidebar (a component, so its class is global here) */
+	.front__side :global(.front__terms:not(:first-child)),
+	.front__side :global(.front__terms) + .block {
+		margin-top: 36px;
+	}
+
+	/* On a phone they are at the bottom of the menu instead */
+	@media (max-width: 719px) {
+		.front__side :global(.front__terms) {
+			display: none;
+		}
 	}
 
 	/* Top story */

@@ -1,0 +1,70 @@
+---
+/**
+ * The visible breadcrumb trail. The same list goes to the layout's
+ * `breadcrumbs` prop, which turns it into BreadcrumbList structured data.
+ * The last item is the current page and is not a link.
+ */
+interface Props {
+	items: Array<{ name: string; url: string }>;
+}
+
+const { items } = Astro.props;
+---
+
+{
+	items.length > 1 && (
+		<nav class="crumbs" aria-label="パンくずリスト">
+			<ol>
+				{items.map((item, index) =>
+					index === items.length - 1 ? (
+						<li aria-current="page">{item.name}</li>
+					) : (
+						<li>
+							<a href={item.url}>{item.name}</a>
+						</li>
+					),
+				)}
+			</ol>
+		</nav>
+	)
+}
+
+<style>
+	.crumbs {
+		margin-bottom: 16px;
+		font-size: 0.8125rem;
+		color: var(--color-muted);
+	}
+
+	.crumbs ol {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 2px 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.crumbs li {
+		min-width: 0;
+		overflow-wrap: anywhere;
+	}
+
+	.crumbs li:not(:last-child)::after {
+		content: "›";
+		margin-inline: 8px;
+		color: var(--color-muted);
+	}
+
+	.crumbs a {
+		color: var(--color-text-secondary);
+	}
+
+	.crumbs a:hover {
+		color: var(--color-accent);
+	}
+
+	.crumbs [aria-current="page"] {
+		color: var(--color-muted);
+	}
+</style>

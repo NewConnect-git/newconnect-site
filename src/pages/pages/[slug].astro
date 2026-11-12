@@ -1,6 +1,7 @@
 ---
 import { decodeSlug, getEmDashEntry, getSeoMeta, getSiteSettings } from "emdash";
 import { PortableText } from "emdash/ui";
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
 import Base from "../../layouts/Base.astro";
 import "../../styles/prose.css";
 
@@ -21,6 +22,12 @@ const seo = getSeoMeta(page, {
 	siteUrl: Astro.url.origin,
 	path: `/pages/${slug}`,
 });
+
+// Shown above the page, and given to the layout as BreadcrumbList structured data
+const crumbs = [
+	{ name: "トップ", url: "/" },
+	{ name: page.data.title, url: seo.canonical ?? `/pages/${slug}` },
+];
 ---
 
 <Base
@@ -32,12 +39,10 @@ const seo = getSeoMeta(page, {
 	robots={seo.robots}
 	content={{ collection: "pages", id: page.data.id, slug }}
 	webPage
-	breadcrumbs={[
-		{ name: settings.title ?? "NewConnect", url: "/" },
-		{ name: page.data.title, url: seo.canonical ?? `/pages/${slug}` },
-	]}
+	breadcrumbs={crumbs}
 >
 	<article class="wrap page">
+		<Breadcrumbs items={crumbs} />
 		<h1 class="page__title" {...page.edit.title}>{page.data.title}</h1>
 		<div class="prose page__body" {...page.edit.content}>
 			<PortableText value={page.data.content} />

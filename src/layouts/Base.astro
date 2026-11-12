@@ -3,6 +3,8 @@ import { getMenuWithCacheHint, getSiteSettingsWithCacheHint } from "emdash";
 import { EmDashHead, EmDashBodyStart, EmDashBodyEnd } from "emdash/ui";
 import { createPublicPageContext } from "emdash/page";
 import SocialLinks from "../components/SocialLinks.astro";
+import TermLinks from "../components/TermLinks.astro";
+import { loadSiteTerms } from "../utils/terms";
 import "../styles/theme.css";
 
 interface Props {
@@ -43,16 +45,19 @@ const {
 	webPage = false,
 } = Astro.props;
 
-const [settings, primary, footer, social] = await Promise.all([
+const [settings, primary, footer, social, siteTerms] = await Promise.all([
 	getSiteSettingsWithCacheHint(),
 	getMenuWithCacheHint("primary"),
 	getMenuWithCacheHint("footer"),
 	getMenuWithCacheHint("social"),
+	// Categories and tags for the bottom of the phone menu
+	loadSiteTerms(),
 ]);
 if (Astro.cache?.enabled) {
 	for (const result of [settings, primary, footer, social]) {
 		if (result?.cacheHint) Astro.cache.set(result.cacheHint);
 	}
+	for (const hint of siteTerms.cacheHints) Astro.cache.set(hint);
 }
 
 const siteTitle = settings.data.title ?? "NewConnect";
@@ -245,6 +250,12 @@ const socialItems = social?.data?.items ?? [];
 						)
 					}
 					<SocialLinks items={socialItems} class="masthead__social" />
+					<TermLinks
+						categories={siteTerms.categories}
+						tags={siteTerms.tags}
+						headingLevel={2}
+						class="masthead__terms"
+					/>
 				</div>
 				<!-- Phone only: dims the page behind the open menu; a tap closes it. -->
 				<div class="masthead__scrim" id="menu-scrim" aria-hidden="true"></div>
@@ -385,7 +396,8 @@ const socialItems = social?.data?.items ?? [];
 
 	.masthead__burger,
 	.masthead__scrim,
-	.masthead :global(.masthead__social) {
+	.masthead :global(.masthead__social),
+	.masthead :global(.masthead__terms) {
 		display: none;
 	}
 
@@ -738,6 +750,12 @@ const socialItems = social?.data?.items ?? [];
 		.masthead :global(.masthead__social) {
 			display: flex;
 			margin: 12px 0 0 -10px;
+		}
+
+		/* Categories and tags at the very bottom of the menu */
+		.masthead :global(.masthead__terms) {
+			display: block;
+			margin-top: 24px;
 		}
 	}
 

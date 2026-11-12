@@ -1,0 +1,119 @@
+---
+/**
+ * Categories as a list and tags as small chips, each with its post count.
+ * Used in the front page sidebar (PC) and at the bottom of the phone menu.
+ * Nothing is rendered when there are no terms with posts.
+ */
+import type { TermLink } from "../utils/terms";
+
+interface Props {
+	categories: TermLink[];
+	tags: TermLink[];
+	/** Heading level for the two group titles */
+	headingLevel?: 2 | 3;
+	class?: string;
+}
+
+const { categories, tags, headingLevel = 2, class: className } = Astro.props;
+const Heading = `h${headingLevel}` as "h2" | "h3";
+---
+
+{
+	(categories.length > 0 || tags.length > 0) && (
+		<div class:list={["terms", className]}>
+			{categories.length > 0 && (
+				<section class="terms__group" aria-label="カテゴリー">
+					<Heading class="terms__title">カテゴリー</Heading>
+					<ul class="terms__categories">
+						{categories.map((term) => (
+							<li>
+								<a href={`/category/${term.slug}`}>
+									<span>{term.label}</span>
+									<span class="terms__count">{term.count}</span>
+								</a>
+							</li>
+						))}
+					</ul>
+				</section>
+			)}
+			{tags.length > 0 && (
+				<section class="terms__group" aria-label="タグ">
+					<Heading class="terms__title">タグ</Heading>
+					<ul class="terms__tags">
+						{tags.map((term) => (
+							<li>
+								<a href={`/tag/${term.slug}`}>
+									# {term.label}
+									<span class="sr-only">（{term.count} 件）</span>
+								</a>
+							</li>
+						))}
+					</ul>
+				</section>
+			)}
+		</div>
+	)
+}
+
+<style>
+	.terms__group + .terms__group {
+		margin-top: 24px;
+	}
+
+	.terms__title {
+		padding-bottom: 8px;
+		border-bottom: 1px solid var(--color-rule);
+		font-size: 1rem;
+		font-weight: 700;
+	}
+
+	.terms__categories {
+		padding: 0;
+		list-style: none;
+	}
+
+	.terms__categories li {
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.terms__categories a {
+		display: flex;
+		justify-content: space-between;
+		gap: 12px;
+		padding: 10px 0;
+		color: var(--color-text);
+		text-decoration: none;
+	}
+
+	.terms__categories a:hover {
+		color: var(--color-accent);
+	}
+
+	.terms__count {
+		color: var(--color-muted);
+		font-size: 0.8125rem;
+	}
+
+	.terms__tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+		margin-top: 12px;
+		padding: 0;
+		list-style: none;
+	}
+
+	.terms__tags a {
+		display: inline-block;
+		padding: 6px 10px;
+		border: 1px solid var(--color-border);
+		color: var(--color-text-secondary);
+		font-size: 0.8125rem;
+		text-decoration: none;
+	}
+
+	.terms__tags a:hover {
+		border-color: var(--color-accent);
+		color: var(--color-accent);
+	}
+</style>

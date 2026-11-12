@@ -1,6 +1,7 @@
 ---
 import { decodeSlug, getEmDashCollection, getEmDashEntry, getSeoMeta, getSiteSettings } from "emdash";
 import { Image, PortableText } from "emdash/ui";
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
 import Base from "../../layouts/Base.astro";
 import { getImageUrl } from "../../utils/image-url";
 import { formatDate } from "../../utils/format";
@@ -38,6 +39,13 @@ const readingTime = getReadingTime(post.data.content);
 const recent = await getEmDashCollection("posts", { orderBy: { published_at: "desc" }, limit: 5 });
 if (Astro.cache?.enabled && !recent.error) Astro.cache.set(recent.cacheHint);
 const others = (recent.error ? [] : recent.entries).filter((entry) => entry.id !== post.id).slice(0, 4);
+
+// Shown above the post, and given to the layout as BreadcrumbList structured data
+const crumbs = [
+	{ name: "トップ", url: "/" },
+	...(category ? [{ name: category.label, url: `/category/${category.slug}` }] : []),
+	{ name: post.data.title, url: seo.canonical ?? `/posts/${slug}` },
+];
 ---
 
 <Base
@@ -47,11 +55,7 @@ const others = (recent.error ? [] : recent.entries).filter((entry) => entry.id !
 	image={seo.ogImage}
 	canonical={seo.canonical}
 	robots={seo.robots}
-	breadcrumbs={[
-		{ name: siteTitle, url: "/" },
-		...(category ? [{ name: category.label, url: `/category/${category.slug}` }] : []),
-		{ name: post.data.title, url: seo.canonical ?? `/posts/${slug}` },
-	]}
+	breadcrumbs={crumbs}
 	type="article"
 	publishedTime={publishedAt?.toISOString() ?? null}
 	modifiedTime={post.data.updatedAt.toISOString()}
@@ -59,6 +63,7 @@ const others = (recent.error ? [] : recent.entries).filter((entry) => entry.id !
 	content={{ collection: "posts", id: post.data.id, slug }}
 >
 	<article class="wrap article">
+		<Breadcrumbs items={crumbs} />
 		{
 			post.data.featured_image && (
 				<figure class="article__media" {...post.edit.featured_image}>

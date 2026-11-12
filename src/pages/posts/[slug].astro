@@ -54,6 +54,14 @@ const others = (recent.error ? [] : recent.entries).filter((entry) => entry.id !
 	content={{ collection: "posts", id: post.data.id, slug }}
 >
 	<article class="wrap article">
+		{
+			post.data.featured_image && (
+				<figure class="article__media" {...post.edit.featured_image}>
+					<Image image={post.data.featured_image} sizes="(min-width: 760px) 720px, 92vw" priority />
+				</figure>
+			)
+		}
+
 		<header class="article__head">
 			{category && <a class="kicker" href={`/category/${category.slug}`}>{category.label}</a>}
 			<h1 class="article__title" {...post.edit.title}>{post.data.title}</h1>
@@ -69,14 +77,6 @@ const others = (recent.error ? [] : recent.entries).filter((entry) => entry.id !
 				<span>約 {readingTime} 分で読めます</span>
 			</p>
 		</header>
-
-		{
-			post.data.featured_image && (
-				<figure class="article__media" {...post.edit.featured_image}>
-					<Image image={post.data.featured_image} sizes="(min-width: 760px) 720px, 92vw" priority />
-				</figure>
-			)
-		}
 
 		<div class="prose article__body" {...post.edit.content}>
 			<PortableText value={post.data.content} />
@@ -148,8 +148,9 @@ const others = (recent.error ? [] : recent.entries).filter((entry) => entry.id !
 		margin-top: 12px;
 	}
 
+	/* The featured image comes first, above the category and the title */
 	.article__media {
-		margin-top: 24px;
+		margin-bottom: 20px;
 	}
 
 	.article__media :global(img) {

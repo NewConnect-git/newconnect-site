@@ -138,3 +138,11 @@ EmDash 1.3.1 のプラグイン API では、記事を作るとき（`ctx.conten
 - README（手順 11）に、プラグイン版ではスラッグを指定できず、タイトルから作られることを書く。スラッグを決めたいときは、管理画面で直すか Actions 版を使う。
 - EmDash への要望は、issue ではなく Discussions の「Ideas」に出す決まり（issue のテンプレートは不具合用）。2026-11-12 に同じ要望がないことを確かめた。文面の下書きを作った。投稿は利用者が確かめてから。
 - EmDash が対応したら、プラグインで Notion の「スラッグ」を使うようにする。
+
+## 11. レジストリから入れたときの ID の問題（2026-11-12）
+
+EmDash は、レジストリから入れたプラグインを manifest の slug ではなく、自動で作った ID（`r_…`）で動かす（[emdash-cms/emdash#4335](https://github.com/emdash-cms/emdash/issues/4335)、未解決）。
+
+- **Notion To EmDash の中**：自分の URL を使わず、記録もプラグインの ID ごとに分かれるので、影響はない。README のルートの表に、レジストリから入れた場合は ID が変わると書いた。
+- **自動サムネイル**：Actions のツールと Post To EmDash は `/_emdash/api/plugins/auto-thumbnail/design` からデザインを読む。Auto Thumbnail Design をレジストリから入れたサイトでは 404 になり、サムネイルが描かれない（エラーにもならない）。NewConnect は GitHub から入れているので影響はない。
+- **決まったこと**：README に書く（Notion To EmDash と Auto Thumbnail Design の両方、英語と日本語）。issue #4335 にこの影響を追記した（2026-11-12、RieTamura）。Actions のツールに ID を変える設定を足すかは、EmDash の対応を見てから決める。

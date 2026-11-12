@@ -42,6 +42,19 @@ export function digestWeekFor(now: Date): DigestWeek {
 	return weekOf(Date.UTC(jst.getUTCFullYear(), jst.getUTCMonth(), jst.getUTCDate() - daysBack));
 }
 
+/** The digest comes out at 9:00 JST on its Saturday. */
+const PUBLISH_HOUR_MS = 9 * 60 * 60 * 1000;
+
+/**
+ * The week of the next digest to come out. Until 9:00 on a Saturday that is
+ * the week ending that day; from then on, the week that has just begun.
+ */
+export function upcomingDigestWeek(now: Date): DigestWeek {
+	const latest = digestWeekFor(now);
+	if (now.getTime() < latest.end.getTime() + PUBLISH_HOUR_MS) return latest;
+	return weekOf(latest.end.getTime() + JST_OFFSET_MS + 7 * DAY_MS);
+}
+
 /** The week a digest post covers, read from its slug; null for any other post. */
 export function digestWeekFromSlug(slug: string | null | undefined): DigestWeek | null {
 	const match = slug?.match(/^weekly-(\d{4})-(\d{2})-(\d{2})$/);

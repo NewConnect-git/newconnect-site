@@ -191,6 +191,8 @@ const socialItems = social?.data?.items ?? [];
 						)
 					}
 				</div>
+				<!-- Phone only: dims the page behind the open menu; a tap closes it. -->
+				<div class="masthead__scrim" id="menu-scrim" aria-hidden="true"></div>
 			</div>
 		</header>
 
@@ -248,17 +250,29 @@ const socialItems = social?.data?.items ?? [];
 				sync();
 			})();
 
-			// Phone menu: the burger opens the panel; Esc closes it.
+			// Phone menu: the burger slides the panel in from the right, under the
+			// header. Esc, the burger again, or a tap on the dimmed page closes it.
 			(function () {
 				var header = document.getElementById("masthead");
 				var button = document.getElementById("menu-button");
+				var scrim = document.getElementById("menu-scrim");
 				if (!header || !button) return;
+				var root = document.documentElement;
 				var setOpen = function (open) {
+					if (open) header.style.setProperty("--menu-top", header.getBoundingClientRect().bottom + "px");
 					header.toggleAttribute("data-open", open);
+					root.toggleAttribute("data-menu-open", open);
 					button.setAttribute("aria-expanded", String(open));
 				};
 				button.addEventListener("click", function () {
 					setOpen(!header.hasAttribute("data-open"));
+				});
+				if (scrim) scrim.addEventListener("click", function () {
+					setOpen(false);
+				});
+				// Turning the phone or widening the window to the PC layout closes it.
+				window.matchMedia("(min-width: 720px)").addEventListener("change", function (event) {
+					if (event.matches) setOpen(false);
 				});
 				document.addEventListener("keydown", function (event) {
 					if (event.key === "Escape" && header.hasAttribute("data-open")) {
@@ -312,7 +326,8 @@ const socialItems = social?.data?.items ?? [];
 		display: contents;
 	}
 
-	.masthead__burger {
+	.masthead__burger,
+	.masthead__scrim {
 		display: none;
 	}
 
@@ -466,10 +481,13 @@ const socialItems = social?.data?.items ?? [];
 
 		.masthead__grid {
 			grid-template-columns: minmax(0, 1fr) auto auto;
-			grid-template-areas:
-				"title theme burger"
-				"panel panel panel";
+			grid-template-areas: "title theme burger";
 			column-gap: 0;
+		}
+
+		/* The page behind the open menu does not scroll */
+		:global(html[data-menu-open]) {
+			overflow: hidden;
 		}
 
 		.masthead__title {
@@ -532,18 +550,61 @@ const socialItems = social?.data?.items ?? [];
 			transform: translateY(-7px) rotate(-45deg);
 		}
 
+		/* The menu slides in from the right, under the header */
 		.masthead__panel {
-			grid-area: panel;
-			display: none;
-			max-height: calc(100dvh - 64px);
+			position: fixed;
+			top: var(--menu-top, 64px);
+			right: 0;
+			bottom: 0;
+			z-index: 2;
+			display: block;
+			width: min(320px, 86vw);
 			overflow-y: auto;
 			overscroll-behavior: contain;
-			padding-block: 12px 20px;
+			padding: 16px 20px 24px;
 			border-top: 1px solid var(--color-border);
+			border-left: 1px solid var(--color-border);
+			background: var(--color-bg);
+			box-shadow: -12px 0 32px rgb(0 0 0 / 0.14);
+			transform: translateX(100%);
+			visibility: hidden;
+			transition:
+				transform 0.25s ease,
+				visibility 0s linear 0.25s;
 		}
 
 		.masthead[data-open] .masthead__panel {
+			transform: none;
+			visibility: visible;
+			transition: transform 0.25s ease;
+		}
+
+		.masthead__scrim {
+			position: fixed;
+			inset: var(--menu-top, 64px) 0 0 0;
+			z-index: 1;
 			display: block;
+			background: rgb(0 0 0 / 0.4);
+			opacity: 0;
+			visibility: hidden;
+			transition:
+				opacity 0.25s ease,
+				visibility 0s linear 0.25s;
+		}
+
+		.masthead[data-open] .masthead__scrim {
+			opacity: 1;
+			visibility: visible;
+			transition: opacity 0.25s ease;
+		}
+
+		@media (prefers-reduced-motion: reduce) {
+			.masthead__panel,
+			.masthead[data-open] .masthead__panel,
+			.masthead__scrim,
+			.masthead[data-open] .masthead__scrim {
+				transition: none;
+			}
 		}
 
 		.masthead__search {

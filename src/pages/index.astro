@@ -2,7 +2,7 @@
 import { getEmDashCollection, getSiteSettings } from "emdash";
 import { Image } from "emdash/ui";
 import Base from "../layouts/Base.astro";
-import { digestWeekFromSlug, inWeek, isDigestSlug } from "../utils/digest";
+import { digestWeekFromSlug, inWeek, isDigestSlug, upcomingDigestWeek } from "../utils/digest";
 import { loadBluesky, loadFeedItems, WEEK_MS, withinWeek } from "../utils/feed";
 import { formatDate, formatShortDate, formatStamp, SOURCE_LABELS, truncate } from "../utils/format";
 
@@ -46,6 +46,10 @@ const roundupRest = roundup.filter((item) => item !== roundupLead);
 const roundupSide = roundupRest.slice(0, 5);
 const roundupMore = roundupRest.length - roundupSide.length;
 const digestHref = digest ? `/posts/${digest.id}` : null;
+// Before the first digest, the note under the roundup counts what the next
+// digest will hold: its week (Saturday to Friday) differs from the last seven days.
+const nextDigest = upcomingDigestWeek(now);
+const nextDigestCount = feed.items.filter((item) => inWeek(item.postedAt, nextDigest)).length;
 
 // No Bluesky posts and no other posts yet: drop the sidebar column entirely.
 const hasSide = bluesky.posts.length > 0 || morePosts.length > 0;
@@ -59,7 +63,28 @@ const hasSide = bluesky.posts.length > 0 || morePosts.length > 0;
 	<div class:list={["wrap front", { "front--with-side": hasSide }]}>
 		<div class="front__main">
 			{
-				lead && (
+				lead?.data.featured_image ? (
+					// With a featured image, the image is the top story: the thumbnail
+					// already carries the title, so the title is kept for screen readers only.
+					<article class="lead lead--image">
+						<p class="lead__meta">
+							{lead.data.terms?.category?.[0] && (
+								<a class="kicker" href={`/category/${lead.data.terms.category[0].slug}`}>
+									{lead.data.terms.category[0].label}
+								</a>
+							)}
+							{lead.data.publishedAt && (
+								<time class="byline" datetime={lead.data.publishedAt.toISOString()}>
+									{formatDate(lead.data.publishedAt)}
+								</time>
+							)}
+						</p>
+						<h2 class="sr-only">{lead.data.title}</h2>
+						<a class="lead__media" href={`/posts/${lead.id}`} aria-label={lead.data.title}>
+							<Image image={lead.data.featured_image} sizes="(min-width: 960px) 760px, 92vw" priority />
+						</a>
+					</article>
+				) : lead && (
 					<article class="lead">
 						<div class="lead__text">
 							{lead.data.terms?.category?.[0] && (
@@ -81,11 +106,6 @@ const hasSide = bluesky.posts.length > 0 || morePosts.length > 0;
 								</p>
 							)}
 						</div>
-						{lead.data.featured_image && (
-							<a class="lead__media" href={`/posts/${lead.id}`} tabindex="-1" aria-hidden="true">
-								<Image image={lead.data.featured_image} sizes="(min-width: 960px) 480px, 92vw" priority />
-							</a>
-						)}
 					</article>
 				)
 			}
@@ -155,8 +175,10 @@ const hasSide = bluesky.posts.length > 0 || morePosts.length > 0;
 							</a>
 						</p>
 					) : (
-						roundupMore > 0 && (
-							<p class="more roundup__later">ほか {roundupMore} 本は、土曜朝の週刊まとめに載ります。</p>
+						nextDigestCount > 0 && (
+							<p class="more roundup__later">
+								{formatShortDate(nextDigest.start)}からの {nextDigestCount} 本は、{formatShortDate(nextDigest.end)}（土）朝の週刊まとめに載ります。
+							</p>
 						)
 					)
 				}
@@ -349,11 +371,28 @@ const hasSide = bluesky.posts.length > 0 || morePosts.length > 0;
 		border-bottom: 1px solid var(--color-rule);
 	}
 
-	@media (min-width: 720px) {
-		.lead:has(.lead__media) {
-			grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
-			align-items: start;
-		}
+	.lead--image {
+		gap: 12px;
+	}
+
+	.lead__meta {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 4px 14px;
+	}
+
+	.lead .lead__meta .byline {
+		margin: 0;
+	}
+
+	.lead__media {
+		display: block;
+	}
+
+	.lead__media:focus-visible {
+		outline: 2px solid var(--color-accent);
+		outline-offset: 3px;
 	}
 
 	.lead__title {

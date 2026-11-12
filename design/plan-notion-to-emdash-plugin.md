@@ -88,7 +88,7 @@ GitHub Actions 版（30 分ごと）
 - リポジトリの一番上を、プラグインとして入れられる形にする（`emdash-plugin.jsonc`、`package.json` の `main` と `exports`、入れたときにビルドする）。NewConnect は `github:RieTamura/Notion-To-EmDash` で入れる。
 - `@napi-rs/canvas` などの Actions 版だけが使う部品は、サイトに入らないようにする（`devDependencies` に移すなど）。ワークフローの `npm ci` は `devDependencies` も入れるので、Actions 版は動く。
 - フォルダの分け方（案）：共有する部分は `src/shared/`、プラグインは `src/plugin.ts`、Actions 版は `src/action/`。
-- `"private": true` を外し、版を `0.1.0` から始める。
+- 版を `0.1.0` から始める。`"private": true` は残す（npm に誤って出さないため。GitHub から入れるのにもレジストリに出すのにも影響しない。Bluesky To EmDash と同じ）。
 
 ## 8. 進める順番
 
@@ -96,7 +96,7 @@ GitHub Actions 版（30 分ごと）
 | --- | --- | --- |
 | 1 | 7 章を決める | 2026-11-12 済（7 章） |
 | 2 | 調べる：カテゴリとタグを作る API と権限、`content:publish` の有無、Notion の画像の置き場所のホスト名、設定に暗号化して入れる方法、`ctx.media.upload()` の上限、cron の間隔を設定から変える方法（設定を保存したときに `ctx.cron.schedule` をかけ直せるか） | 2026-11-12 済（EmDash 1.3.1 の型と実装、ドキュメント、Bluesky To EmDash のコードで確かめた）。結果は下の「手順 2 で分かったこと」 |
-| 3 | 今のリポジトリをプラグインも入れられる形に組みかえる（`emdash-plugin.jsonc`、`src/plugin.ts`、フォルダの分け方、`@napi-rs/canvas` を `devDependencies` へ、テストの準備） | `npm test`（`emdash-plugin validate` とテスト）が通る。Actions 版の手動実行（dry-run）も今までどおり動く |
+| 3 | 今のリポジトリをプラグインも入れられる形に組みかえる（`emdash-plugin.jsonc`、`src/plugin.ts`、フォルダの分け方、`@napi-rs/canvas` を `devDependencies` へ、テストの準備） | `npm test`（`emdash-plugin validate` とテスト）が通る。Actions 版の手動実行（dry-run）も今までどおり動く。2026-11-12 手元で済んだ：`src/shared/`（notion、convert、portable-text、新しく分けた properties）、`src/action/`（今までのツール）、`src/plugin.ts`（設定を読み、cron を登録するだけのひな形）。テストは `tests/action/`（Node）と `tests/plugin/`（EmDash のテスト用ホスト）の 2 つに分け、vitest は 4 に下げた（`@emdash-cms/plugin-test` が vitest 4 を求めるため）。`@napi-rs/canvas` は `devDependencies` へ。`emdash-plugin.jsonc` に権限、通信先、記録、設定（Notion のトークン〔secret〕、データベース、公開か下書きか、間隔）を書いた。`npm test` で型チェック、manifest の確認、テスト 106 件が通る。`npm start`（送らずに一覧を出す）も手元で今までどおり動いた。GitHub Actions での確認は push のあと |
 | 4 | Notion を読む部分と、本文を変える部分を今のコードから移す（`notion.ts`、`convert.ts`、`portable-text.ts`。`fetch` を `ctx.http.fetch` に替える） | 今のテストがそのまま通る |
 | 5 | 送る部分を `ctx.content` と `ctx.media` で書き直す。1 回 1 ページ、続きを記録に残す | 呼び出しの回数を数えるテストで、30 回を超えないことを確かめる |
 | 6 | Notion への書き戻しと、送り直しの判定 | 二重にならない。直した記事が更新される |

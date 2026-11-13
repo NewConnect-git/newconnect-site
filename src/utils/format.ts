@@ -47,10 +47,3 @@ export function truncate(text: string | null | undefined, length: number): strin
 	const clean = text.replace(/\s+/g, " ").trim();
 	return clean.length > length ? `${clean.slice(0, length)}…` : clean;
 }
-
-export const SOURCE_LABELS: Record<string, string> = {
-	youtube: "YouTube",
-	note: "note",
-	zenn: "Zenn",
-	hatena: "はてなブログ",
-};

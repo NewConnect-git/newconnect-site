@@ -1,6 +1,6 @@
 import { definePlugin, type PluginContext } from "emdash";
 import { digestWeekFor, DIGEST_SLUG_PREFIX, inWeek, type DigestWeek } from "../../utils/digest";
-import { formatShortDate, SOURCE_LABELS, truncate } from "../../utils/format";
+import { formatShortDate, truncate } from "../../utils/format";
 
 /**
  * Every Saturday at 9:00 Japan time, publishes one post that lists the
@@ -89,10 +89,9 @@ function linkBlock(style: string, text: string, href: string) {
 }
 
 function itemBlocks(item: DigestItem) {
-	const meta = `${SOURCE_LABELS[item.source] ?? item.source}・${formatShortDate(item.postedAt)}`;
 	return [
 		linkBlock("h3", item.title, item.url),
-		textBlock("normal", meta),
+		textBlock("normal", formatShortDate(item.postedAt)),
 		...(item.summary ? [textBlock("normal", truncate(item.summary, 200))] : []),
 	];
 }

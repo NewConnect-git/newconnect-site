@@ -63,7 +63,8 @@ export default defineConfig({
 			// Keeps cached HTML identical for visitors and signed-in editors.
 			toolbar: "client",
 			// Both run in-process, so they need no Worker Loader or paid plan.
-			// rss-feed copies YouTube / note / Zenn / Hatena Blog items into
+			// rss-feed copies YouTube videos and blog posts (note, Zenn, Hatena
+			// Blog or any other RSS / Atom feed) into
 			// `feed_items`; bluesky-feed copies Bluesky posts into `bluesky`.
 			// Each does nothing until it is configured in the admin.
 			// weekly-digest (in this repo) turns each week's feed_items into one

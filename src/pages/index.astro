@@ -6,7 +6,7 @@ import Base from "../layouts/Base.astro";
 import { loadSiteTerms } from "../utils/terms";
 import { digestWeekFromSlug, inWeek, isDigestSlug, upcomingDigestWeek } from "../utils/digest";
 import { loadBluesky, loadFeedItems, WEEK_MS, withinWeek } from "../utils/feed";
-import { formatDate, formatShortDate, formatStamp, SOURCE_LABELS, truncate } from "../utils/format";
+import { formatDate, formatShortDate, formatStamp, truncate } from "../utils/format";
 
 const now = new Date();
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -141,7 +141,6 @@ const hasSide = bluesky.posts.length > 0 || morePosts.length > 0 || hasTerms;
 										{roundupLead.kind === "video" && <span class="play" aria-hidden="true" />}
 									</span>
 								)}
-								<span class="label">{SOURCE_LABELS[roundupLead.source] ?? roundupLead.source}</span>
 								<span class="roundup-lead__title">{roundupLead.title}</span>
 								{roundupLead.summary && (
 									<span class="roundup-lead__summary">{truncate(roundupLead.summary, 110)}</span>
@@ -156,7 +155,6 @@ const hasSide = bluesky.posts.length > 0 || morePosts.length > 0 || hasTerms;
 										<li>
 											<a class="roundup-item" href={item.url} rel="noopener">
 												<span class="roundup-item__text">
-													<span class="label">{SOURCE_LABELS[item.source] ?? item.source}</span>
 													<span class="roundup-item__title">{item.title}</span>
 													{item.summary && (
 														<span class="roundup-item__summary">{truncate(item.summary, 60)}</span>
@@ -486,19 +484,6 @@ const hasSide = bluesky.posts.length > 0 || morePosts.length > 0 || hasTerms;
 		.roundup__grid:not(.roundup__grid--single) {
 			grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
 		}
-	}
-
-	/* Source label: YouTube / note / Zenn / はてなブログ */
-	.label {
-		width: fit-content;
-		padding: 1px 6px;
-		background: var(--color-brand);
-		color: var(--color-on-brand);
-		font-family: var(--font-sans);
-		font-size: 0.6875rem;
-		font-weight: 700;
-		letter-spacing: 0.06em;
-		line-height: 1.6;
 	}
 
 	.roundup-lead {

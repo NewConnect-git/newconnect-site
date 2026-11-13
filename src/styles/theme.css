@@ -41,6 +41,8 @@
 	--radius-sm: 2px;
 	--radius-lg: 2px;
 	--radius-full: 999px;
+	/* Every image and thumbnail on the site */
+	--radius-media: 8px;
 
 	--page-width: 1200px;
 	--content-width: 42rem;

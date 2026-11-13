@@ -184,7 +184,7 @@
 
 	/* Media */
 	.prose img {
-		border-radius: var(--radius-lg);
+		border-radius: var(--radius-media);
 	}
 
 	.prose :is(figure > img, figure > a > img, .emdash-gallery-item img) {
@@ -203,7 +203,7 @@
 	.prose :is(.emdash-embed-video, .emdash-iframe),
 	.prose .emdash-video video {
 		overflow: hidden;
-		border-radius: var(--radius-lg);
+		border-radius: var(--radius-media);
 		background: var(--color-fill);
 	}
 

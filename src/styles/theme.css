@@ -41,8 +41,9 @@
 	--radius-sm: 2px;
 	--radius-lg: 2px;
 	--radius-full: 999px;
-	/* Every image and thumbnail on the site */
-	--radius-media: 8px;
+	/* Images and thumbnails, as round as Zenn's cards (14px, 10px for small ones) */
+	--radius-media: 14px;
+	--radius-media-sm: 10px;
 
 	--page-width: 1200px;
 	--content-width: 42rem;

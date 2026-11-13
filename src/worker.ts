@@ -11,6 +11,34 @@ const KEEP_PREFIXES = ["/_astro"];
 const SETUP_API = "/_emdash/api/setup";
 const ALL_PAGE_TAGS = ["posts", "pages", "bluesky", "feed_items"];
 
+// EmDash sends media with `max-age=0, must-revalidate`, because "Replace
+// original" may overwrite a file under the same key, and the Worker answers
+// every image request by reading R2 (and `/_image` resizes it again each time).
+// Cache them at the Cloudflare edge instead, tagged so that any media change in
+// the admin purges them; browsers keep EmDash's header and revalidate.
+const MEDIA_PREFIX = "/_emdash/api/media";
+const MEDIA_FILE_PREFIX = `${MEDIA_PREFIX}/file/`;
+const IMAGE_ENDPOINT = "/_image";
+const MEDIA_TAG = "media";
+const MEDIA_EDGE_CACHE = "public, max-age=2592000";
+
+function isCacheableMedia(request: Request, url: URL, response: Response): boolean {
+	return (
+		(request.method === "GET" || request.method === "HEAD") &&
+		response.status === 200 &&
+		!request.headers.has("Range") &&
+		(url.pathname.startsWith(MEDIA_FILE_PREFIX) || url.pathname === IMAGE_ENDPOINT) &&
+		(response.headers.get("Content-Type") ?? "").startsWith("image/")
+	);
+}
+
+function cacheMediaAtEdge(response: Response): Response {
+	const headers = new Headers(response.headers);
+	headers.set("Cloudflare-CDN-Cache-Control", MEDIA_EDGE_CACHE);
+	headers.set("Cache-Tag", MEDIA_TAG);
+	return new Response(response.body, { status: response.status, headers });
+}
+
 // A page opened while the database is still migrating answers 503; without
 // this the cache keeps serving that error after the database is ready.
 function keepErrorsOutOfCache(response: Response): Response {
@@ -60,6 +88,11 @@ export default {
 			if (request.method === "POST" && url.pathname.startsWith(SETUP_API) && response.ok) {
 				ctx.waitUntil(purgeTags(ALL_PAGE_TAGS).catch((error) => console.error("setup purge", error)));
 			}
+			// Upload, replace, edit or delete in the media library.
+			if (request.method !== "GET" && request.method !== "HEAD" && url.pathname.startsWith(MEDIA_PREFIX) && response.ok) {
+				ctx.waitUntil(purgeTags([MEDIA_TAG]).catch((error) => console.error("media purge", error)));
+			}
+			if (isCacheableMedia(request, url, response)) return cacheMediaAtEdge(response);
 			return keepErrorsOutOfCache(response);
 		});
 	},

@@ -26,6 +26,9 @@ const LONG_CACHE = { maxAge: 86_400, swr: 604_800 };
 export default defineConfig({
 	output: "server",
 	adapter: cloudflare(),
+	// The site's CSS is a few KB; inlining it saves a render-blocking request
+	// on every first visit, and the HTML is cached at the edge anyway.
+	build: { inlineStylesheets: "always" },
 	i18n: {
 		defaultLocale: "ja",
 		locales: ["ja"],

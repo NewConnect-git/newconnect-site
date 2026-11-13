@@ -130,7 +130,7 @@ const hasSide = bluesky.posts.length > 0 || morePosts.length > 0 || hasTerms;
 							<a class="roundup-lead" href={roundupLead.url} rel="noopener">
 								{roundupLead.thumbnail && (
 									<span class="roundup-lead__media">
-										<img src={roundupLead.thumbnail} alt="" loading="lazy" />
+										<img src={roundupLead.thumbnail} alt="" />
 										{roundupLead.kind === "video" && <span class="play" aria-hidden="true" />}
 									</span>
 								)}

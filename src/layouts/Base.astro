@@ -26,6 +26,8 @@ interface Props {
 	breadcrumbs?: Array<{ name: string; url: string }>;
 	/** Marks a standalone page (not a post) with WebPage structured data. */
 	webPage?: boolean;
+	/** The title already names the site; use it as is (front page). */
+	fullTitle?: boolean;
 }
 
 const {
@@ -43,6 +45,7 @@ const {
 	front = false,
 	breadcrumbs,
 	webPage = false,
+	fullTitle: titleIsFull = false,
 } = Astro.props;
 
 const [settings, primary, footer, social, siteTerms] = await Promise.all([
@@ -65,7 +68,8 @@ const siteTitle = settings.data.title ?? "NewConnect";
 const metaDescription = description?.replace(/\s+/g, " ").trim() || undefined;
 // EmDash's getSeoMeta() already ends post and page titles with " | <site>",
 // so the site name is added only when it is not there yet.
-const fullTitle = title === siteTitle || title.endsWith(` | ${siteTitle}`) ? title : `${title} | ${siteTitle}`;
+const fullTitle =
+	titleIsFull || title === siteTitle || title.endsWith(` | ${siteTitle}`) ? title : `${title} | ${siteTitle}`;
 
 const TRAILING_SLASH = /(?<=.)\/$/;
 const currentPath = Astro.url.pathname.replace(TRAILING_SLASH, "");

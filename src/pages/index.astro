@@ -54,14 +54,21 @@ const digestHref = digest ? `/posts/${digest.id}` : null;
 const nextDigest = upcomingDigestWeek(now);
 const nextDigestCount = feed.items.filter((item) => inWeek(item.postedAt, nextDigest)).length;
 
+// Search results: the title is the site name and the tagline, and the
+// description says what the site is (the tagline alone is too short for that).
+const siteName = settings.title ?? "NewConnect";
+const HOME_DESCRIPTION =
+	"Notion座談会、Notionしゅふ会、Notion teachers を運営する NewConnect のサイトです。毎週土曜の朝に、YouTube の動画と note・Zenn・はてなブログの記事を「週刊まとめ」として紹介しています。";
+
 // No Bluesky posts and no other posts yet: drop the sidebar column entirely.
 const hasTerms = siteTerms.categories.length > 0 || siteTerms.tags.length > 0;
 const hasSide = bluesky.posts.length > 0 || morePosts.length > 0 || hasTerms;
 ---
 
 <Base
-	title={settings.title ?? "NewConnect"}
-	description={settings.tagline}
+	title={settings.tagline ? `${siteName}｜${settings.tagline}` : siteName}
+	fullTitle
+	description={HOME_DESCRIPTION}
 	front
 >
 	<div class:list={["wrap front", { "front--with-side": hasSide }]}>

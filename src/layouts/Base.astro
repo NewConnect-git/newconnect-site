@@ -78,11 +78,11 @@ const canonicalUrl =
 	canonical ?? (robots?.includes("noindex") ? undefined : `${siteUrl}${currentPath}`);
 
 // Share image: the page's own, else the admin's default (Settings > SEO, which
-// EmDashHead applies), else the newspaper card in public/og-default-v2.png.
+// EmDashHead applies), else the newspaper card in public/og-default-v3.png.
 // Discord and other services keep a fetched image for a long time per URL,
 // so a changed card gets a new file name (v3, …) instead of the same one.
 const shareImage =
-	image || (settings.data.seo?.defaultOgImage?.url ? undefined : `${siteUrl}/og-default-v2.png`);
+	image || (settings.data.seo?.defaultOgImage?.url ? undefined : `${siteUrl}/og-default-v3.png`);
 
 const pageCtx = createPublicPageContext({
 	Astro,

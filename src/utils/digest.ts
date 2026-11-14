@@ -8,6 +8,9 @@
 /** Digest posts have the slug `weekly-YYYY-MM-DD`, the Saturday they came out. */
 export const DIGEST_SLUG_PREFIX = "weekly-";
 
+/** Every digest is in this category; its list (/category/weekly) is split by month. */
+export const DIGEST_CATEGORY = { taxonomy: "category", slug: "weekly", label: "週刊まとめ" } as const;
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 /** Japan has no daylight saving time, so this offset is fixed. */
 const JST_OFFSET_MS = 9 * 60 * 60 * 1000;

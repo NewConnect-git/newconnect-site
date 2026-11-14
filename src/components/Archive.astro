@@ -2,7 +2,7 @@
 import { getEmDashCollection } from "emdash";
 import { Image } from "emdash/ui";
 import Base from "../layouts/Base.astro";
-import { formatDate } from "../utils/format";
+import { formatDate, formatMonth } from "../utils/format";
 
 /** A paginated list of the site's posts. Used by /posts, /category/[slug] and /tag/[slug]. */
 interface Props {
@@ -11,10 +11,12 @@ interface Props {
 	basePath: string;
 	where?: Record<string, string>;
 	noindex?: boolean;
+	/** Split the list under "2026年11月" headings (Japan time), as for the weekly digests. */
+	groupByMonth?: boolean;
 }
 
 const PAGE_SIZE = 20;
-const { title, lead, basePath, where, noindex } = Astro.props;
+const { title, lead, basePath, where, noindex, groupByMonth } = Astro.props;
 
 const pageParam = Number.parseInt(Astro.url.searchParams.get("page") ?? "1", 10);
 const page = Number.isFinite(pageParam) && pageParam > 1 ? pageParam : 1;
@@ -30,6 +32,18 @@ if (Astro.cache?.enabled && !result.error) Astro.cache.set(result.cacheHint);
 const posts = result.error ? [] : result.entries;
 const hasMore = !result.error && (result as { hasMore?: boolean }).hasMore === true;
 const pageHref = (n: number) => (n === 1 ? basePath : `${basePath}?page=${n}`);
+
+// Posts come newest first, so each month's posts are next to each other.
+type Post = (typeof posts)[number];
+const groups: { month: string; posts: Post[] }[] = [];
+for (const post of posts) {
+	const month = groupByMonth && post.data.publishedAt ? formatMonth(post.data.publishedAt) : "";
+	const last = groups.at(-1);
+	if (last && last.month === month) last.posts.push(post);
+	else groups.push({ month, posts: [post] });
+}
+// Under a month heading (h2) the post titles become h3.
+const RowTitle = groupByMonth ? "h3" : "h2";
 ---
 
 <Base
@@ -48,8 +62,11 @@ const pageHref = (n: number) => (n === 1 ? basePath : `${basePath}?page=${n}`);
 			posts.length === 0 ? (
 				<p class="empty-note">まだ記事がありません。</p>
 			) : (
+				groups.map((group) => (
+				<section class="archive__group">
+					{group.month && <h2 class="archive__month">{group.month}</h2>}
 				<ul class="archive__list">
-					{posts.map((post) => (
+					{group.posts.map((post) => (
 						<li class="row">
 							<div class="row__text">
 								{post.data.terms?.category?.[0] && (
@@ -57,11 +74,11 @@ const pageHref = (n: number) => (n === 1 ? basePath : `${basePath}?page=${n}`);
 										{post.data.terms.category[0].label}
 									</a>
 								)}
-								<h2 class="row__title">
+								<RowTitle class="row__title">
 									<a class="headline-link" href={`/posts/${post.id}`}>
 										{post.data.title}
 									</a>
-								</h2>
+								</RowTitle>
 								{post.data.excerpt && <p class="row__excerpt">{post.data.excerpt}</p>}
 								{post.data.publishedAt && (
 									<p class="byline">
@@ -79,6 +96,8 @@ const pageHref = (n: number) => (n === 1 ? basePath : `${basePath}?page=${n}`);
 						</li>
 					))}
 				</ul>
+				</section>
+				))
 			)
 		}
 
@@ -101,6 +120,17 @@ const pageHref = (n: number) => (n === 1 ? basePath : `${basePath}?page=${n}`);
 	.archive__lead {
 		margin-bottom: 16px;
 		color: var(--color-text-secondary);
+	}
+
+	.archive__group + .archive__group {
+		margin-top: 32px;
+	}
+
+	.archive__month {
+		padding-bottom: 6px;
+		border-bottom: 2px solid var(--color-rule);
+		font-size: 1.125rem;
+		font-weight: 700;
 	}
 
 	.row {

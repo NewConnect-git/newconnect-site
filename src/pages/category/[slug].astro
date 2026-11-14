@@ -1,6 +1,7 @@
 ---
 import { decodeSlug, getTerm } from "emdash";
 import Archive from "../../components/Archive.astro";
+import { DIGEST_CATEGORY } from "../../utils/digest";
 
 const slug = decodeSlug(Astro.params.slug);
 const term = slug ? await getTerm("category", slug) : null;
@@ -14,4 +15,5 @@ if (!term) {
 	lead={term.description || `「${term.label}」の記事の一覧です。`}
 	basePath={`/category/${term.slug}`}
 	where={{ category: term.slug }}
+	groupByMonth={term.slug === DIGEST_CATEGORY.slug}
 />

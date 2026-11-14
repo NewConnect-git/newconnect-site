@@ -1,5 +1,5 @@
 import { definePlugin, type PluginContext } from "emdash";
-import { digestWeekFor, DIGEST_SLUG_PREFIX, inWeek, type DigestWeek } from "../../utils/digest";
+import { DIGEST_CATEGORY, digestWeekFor, DIGEST_SLUG_PREFIX, inWeek, type DigestWeek } from "../../utils/digest";
 import { formatShortDate, truncate } from "../../utils/format";
 
 /**
@@ -14,7 +14,7 @@ const SCHEDULE = "0 0 * * 6";
 const FEED_COLLECTION = "feed_items";
 const POST_COLLECTION = "posts";
 /** Every digest goes in this category (/category/weekly), made on first use. */
-const CATEGORY = { taxonomy: "category", slug: "weekly", label: "週刊まとめ" } as const;
+const CATEGORY = DIGEST_CATEGORY;
 /** Feed items are read newest first, this many at a time, until the week is passed. */
 const PAGE_SIZE = 100;
 const MAX_PAGES = 20;

@@ -20,6 +20,11 @@ export function formatIssueDate(date: Date): string {
 	return `${formatDate(date)}（${day}）`;
 }
 
+/** "2026年11月", for month headings in a list. */
+export function formatMonth(date: Date): string {
+	return date.toLocaleDateString("ja-JP", { year: "numeric", month: "long", timeZone: TIME_ZONE });
+}
+
 /** "11月6日" */
 export function formatShortDate(date: Date): string {
 	return date.toLocaleDateString("ja-JP", { month: "long", day: "numeric", timeZone: TIME_ZONE });

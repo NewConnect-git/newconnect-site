@@ -6,6 +6,7 @@ import { defineConfig } from "astro/config";
 import autoThumbnail from "auto-thumbnail";
 import blueskyFeed from "bluesky-feed";
 import blueskyShare from "bluesky-share";
+import discordShare from "discord-share";
 import notionToEmdash from "notion-to-emdash";
 import rssFeed from "rss-feed";
 import emdash from "emdash/astro";
@@ -76,7 +77,9 @@ export default defineConfig({
 			// encrypted, so the site needs EMDASH_ENCRYPTION_KEY.
 			// bluesky-share posts each post to Bluesky once, when it is first
 			// published (admin → Bluesky Share). Its app password is encrypted too.
-			plugins: [rssFeed, blueskyFeed, weeklyDigest(), autoThumbnail, notionToEmdash, blueskyShare],
+			// discord-share does the same for a Discord channel through a webhook
+			// (admin → Discord Share); the webhook URL is encrypted too.
+			plugins: [rssFeed, blueskyFeed, weeklyDigest(), autoThumbnail, notionToEmdash, blueskyShare, discordShare],
 		}),
 	],
 	devToolbar: { enabled: false },

@@ -111,6 +111,17 @@ Bluesky ではログイン、画像の送信、投稿の 3 回の通信が要っ
 6. 本番に入れる（下の手順）。
 7. README（英語と日本語）を書き、公開するかを決める。
 
+### 進み具合（2026-11-14）
+
+- 手順 1〜4 は済み。リポジトリは `C:/Users/kapa3/EmDash-To-Discord`（スラッグ `discord-share`、名前 EmDash To Discord）。git は手元だけで、GitHub にはまだ上げていない。
+- 手順 2 の答え：`ctx.media` は使わない。`media:read` の URL はログインが要るので、Discord は取れない。代わりに、記事の公開 URL のオリジンに `/_emdash/api/media/file/<featured_image.meta.storageKey>` を付ける（サイトの og:image と同じ形）。本番では、ログインなしで 200 が返った。外部の画像（`src` が http）は、その URL をそのまま使う。権限は `content:read` と `network:request` だけ。
+- 決めたこと（計画からの追加）：Webhook の URL は `discord.com`、`discordapp.com`、`canary.`、`ptb.` を受け付け、送り先は常に `https://discord.com/api/webhooks/<ID>/<トークン>` にする。`{date}` のタイムゾーンを設定で選べる（既定 UTC）。画像を付けるかどうかも設定できる（既定はオン）。メモやログに残すエラー文からは、トークンを `***` に置き換える。
+- 投稿へのリンクにはサーバーの ID が要る。`wait=true` の返事に `guild_id` がないときは、Webhook の情報を 1 回だけ読む（通信は公開 1 回で最大 7 回）。実際の返事に `guild_id` があるかどうかは、手順 5 で確かめる。
+- テストは 29 件（中身の組み立て 15 件、公開の流れ 14 件）。すべて通過し、`npm run build` もできる。
+- 手順 5（2026-11-14 済み）：GitHub に公開リポジトリ RieTamura/EmDash-To-Discord を作った（bd9bf6a）。テスト用 Webhook の URL は `NewConnect/.env` の `DISCORD_TEST_WEBHOOK_URL`。message.ts で組み立てたカードを本物の Discord に送り、200 が返った。`wait=true` の返事には **`guild_id` がない**ので、Webhook の情報を読む処理が必要（それで取れた）。画像の URL は Discord に受け付けられた。NewConnect の開発環境に GitHub から入れ、テスト記事を 2 回公開した。1 回目は送られて「投稿済み」と「開く」のリンクが出た。2 回目は送られなかった。
+- わかったこと：秘密の設定は、空で保存しても前の値が残る（設定の API は秘密の値を返さない）。設定の説明と README の「空にすると投稿しません」をやめ、「投稿するコレクションを空にするか、プラグインを無効にする」に直した（テストも追加、30 件）。ローカルの Webhook 設定は、D1 の `options` から行を消した。
+- 注意：Actions のツールがあとから付けるサムネイル（週刊まとめなど）は、公開の時点ではまだないので、カードに出ない。bluesky-share と同じ。あとで投稿を書き換える機能（9. の候補）で直せる。
+
 ## 8. 本番に入れる手順
 
 1. Discord で、送りたいチャンネルの「チャンネルの編集 → 連携サービス → ウェブフック → 新しいウェブフック」で作り、URL をコピーする。名前とアイコンもここで決められる。

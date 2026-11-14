@@ -22,6 +22,7 @@
     "auto-thumbnail": "github:RieTamura/Auto-Thumbnail",
     "bluesky-feed": "github:RieTamura/Bluesky-To-EmDash",
     "bluesky-share": "github:RieTamura/EmDash-To-Bluesky",
+    "discord-share": "github:RieTamura/EmDash-To-Discord",
     "emdash": "^1.4.0",
     "notion-to-emdash": "github:RieTamura/Notion-To-EmDash",
     "react": "19.2.4",

@@ -13,6 +13,8 @@ const TASK = "weekly-digest";
 const SCHEDULE = "0 0 * * 6";
 const FEED_COLLECTION = "feed_items";
 const POST_COLLECTION = "posts";
+/** Every digest goes in this category (/category/weekly), made on first use. */
+const CATEGORY = { taxonomy: "category", slug: "weekly", label: "週刊まとめ" } as const;
 /** Feed items are read newest first, this many at a time, until the week is passed. */
 const PAGE_SIZE = 100;
 const MAX_PAGES = 20;
@@ -128,6 +130,27 @@ function buildPost(week: DigestWeek, items: DigestItem[]) {
 	};
 }
 
+/**
+ * Puts the post in the 週刊まとめ category, creating the term the first time.
+ * A failure is only logged: the digest still goes out, without the category.
+ */
+async function addCategory(ctx: PluginContext, postId: string): Promise<void> {
+	const taxonomies = ctx.taxonomies;
+	if (!taxonomies?.createTerm || !taxonomies.addEntryTerms) {
+		ctx.log.warn("taxonomies:write missing; digest has no category", { postId });
+		return;
+	}
+	try {
+		const terms = await taxonomies.getTerms(CATEGORY.taxonomy);
+		const term =
+			terms.find((t) => t.slug === CATEGORY.slug) ??
+			(await taxonomies.createTerm(CATEGORY.taxonomy, { label: CATEGORY.label, slug: CATEGORY.slug }));
+		await taxonomies.addEntryTerms(POST_COLLECTION, postId, CATEGORY.taxonomy, [term.id]);
+	} catch (error) {
+		ctx.log.warn("Could not add the digest category", { postId, error: String(error) });
+	}
+}
+
 /** Writes and publishes the digest for the week that ends on the Saturday on or before `now`. */
 export async function publishDigest(ctx: PluginContext, now = new Date()): Promise<DigestResult> {
 	const content = ctx.content;
@@ -154,6 +177,7 @@ export async function publishDigest(ctx: PluginContext, now = new Date()): Promi
 		content: post.content,
 	});
 	await content.update(POST_COLLECTION, created.id, { title: post.title });
+	await addCategory(ctx, created.id);
 	// Remember it before publishing, so a failed publish never makes a second post.
 	await ctx.kv.set(doneKey, created.id);
 	const versioned = await content.getVersioned(POST_COLLECTION, created.id);
@@ -167,7 +191,7 @@ export function createPlugin() {
 	return definePlugin({
 		id: "weekly-digest",
 		version: "0.1.0",
-		capabilities: ["content:read", "content:write", "content:publish"],
+		capabilities: ["content:read", "content:write", "content:publish", "taxonomies:write"],
 		hooks: {
 			"plugin:install": async (_event, ctx) => schedule(ctx),
 			"plugin:activate": async (_event, ctx) => schedule(ctx),

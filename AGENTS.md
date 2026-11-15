@@ -24,6 +24,7 @@ Locally, `/_emdash/api/setup/dev-bypass?redirect=/_emdash/admin` skips setup.
 | `src/utils/feed.ts` | Reads `feed_items` and `bluesky`; `withinWeek()` is the 7-day window |
 | `src/utils/digest.ts` | The digest week (Saturday to Friday, JST) and the `weekly-` slug |
 | `src/plugins/weekly-digest/` | Native plugin: Saturday cron writes the digest post; admins can POST `/_emdash/api/plugins/weekly-digest/run` |
+| `src/plugins/profile-block/` | Native plugin: 「プロフィール」 editor block (illustration, name, introduction), rendered by `components/Profile.astro` |
 | `src/styles/theme.css` | Newspaper tokens (paper, ink, one red). Reset is in `@layer reset` so `prose.css` wins |
 | `seed/seed.json` | Schema, menus and sample content |
 

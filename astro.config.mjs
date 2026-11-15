@@ -10,6 +10,7 @@ import discordShare from "discord-share";
 import notionToEmdash from "notion-to-emdash";
 import rssFeed from "rss-feed";
 import emdash from "emdash/astro";
+import profileBlock from "./src/plugins/profile-block/index.ts";
 import weeklyDigest from "./src/plugins/weekly-digest/index.ts";
 import { readFileSync } from "node:fs";
 
@@ -79,7 +80,18 @@ export default defineConfig({
 			// published (admin → Bluesky Share). Its app password is encrypted too.
 			// discord-share does the same for a Discord channel through a webhook
 			// (admin → Discord Share); the webhook URL is encrypted too.
-			plugins: [rssFeed, blueskyFeed, weeklyDigest(), autoThumbnail, notionToEmdash, blueskyShare, discordShare],
+			// profile-block (in this repo) adds a 「プロフィール」 block to the
+			// editor: illustration, name and introduction side by side.
+			plugins: [
+				rssFeed,
+				blueskyFeed,
+				weeklyDigest(),
+				profileBlock(),
+				autoThumbnail,
+				notionToEmdash,
+				blueskyShare,
+				discordShare,
+			],
 		}),
 	],
 	devToolbar: { enabled: false },

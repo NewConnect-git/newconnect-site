@@ -1,0 +1,97 @@
+---
+/**
+ * Renders a 「プロフィール」 block: illustration on the left, name and
+ * introduction on the right. Stacks on narrow screens. Every field is
+ * optional, so a half-filled block still renders what it has.
+ */
+interface ProfileNode {
+	_type: "profile";
+	_key: string;
+	image?: string;
+	name?: string;
+	bio?: string;
+}
+
+interface Props {
+	node: ProfileNode;
+}
+
+const { node } = Astro.props;
+const image = node.image?.trim();
+const name = node.name?.trim();
+const bio = node.bio?.trim();
+---
+
+{
+	(image || name || bio) && (
+		<div class="profile">
+			{/* The name sits beside the picture, so the picture needs no alt text of its own. */}
+			{image && <img class="profile__image" src={image} alt="" width="96" height="96" loading="lazy" decoding="async" />}
+			<div class="profile__text">
+				{name && <p class="profile__name">{name}</p>}
+				{bio && <p class="profile__bio">{bio}</p>}
+			</div>
+		</div>
+	)
+}
+
+<style>
+	.profile {
+		display: grid;
+		grid-template-columns: 96px 1fr;
+		gap: 20px;
+		align-items: center;
+		padding: 16px 0;
+		border-top: 1px solid var(--color-border);
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	/* Consecutive blocks share one rule between them. */
+	:global(.prose) > .profile + .profile {
+		margin-block-start: 0;
+		border-top: 0;
+	}
+
+	.profile__image {
+		width: 96px;
+		height: 96px;
+		border-radius: 50%;
+		object-fit: cover;
+		outline: 1px solid var(--color-media-outline);
+		outline-offset: -1px;
+	}
+
+	.profile__text {
+		min-width: 0;
+	}
+
+	.profile__text > p {
+		margin: 0;
+	}
+
+	.profile__name {
+		color: var(--color-text);
+		font-weight: 700;
+		line-height: var(--leading-snug);
+	}
+
+	.profile__bio {
+		margin-top: 4px;
+		font-size: 15px;
+		line-height: 1.8;
+		white-space: pre-line;
+	}
+
+	@media (max-width: 480px) {
+		.profile {
+			grid-template-columns: 72px 1fr;
+			gap: 14px;
+			align-items: start;
+		}
+
+		.profile__image {
+			width: 72px;
+			height: 72px;
+		}
+	}
+</style>

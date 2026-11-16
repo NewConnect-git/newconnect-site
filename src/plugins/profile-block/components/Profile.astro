@@ -1,8 +1,12 @@
 ---
 /**
- * Renders a 「プロフィール」 block: illustration on the left, name and
- * introduction on the right. Stacks on narrow screens. Every field is
- * optional, so a half-filled block still renders what it has.
+ * Renders a 「プロフィール」 block: illustration on the left, name,
+ * introduction and links on the right. Stacks on narrow screens. Every field
+ * is optional, so a half-filled block still renders what it has.
+ *
+ * Each link shows its site's favicon. The icon is fetched here, on the server,
+ * and inlined as a data URI: readers' browsers make no request to a third
+ * party, and the icon is cached with the page.
  */
 interface ProfileNode {
 	_type: "profile";
@@ -10,6 +14,7 @@ interface ProfileNode {
 	image?: string;
 	name?: string;
 	bio?: string;
+	links?: { url?: string; label?: string }[];
 }
 
 interface Props {
@@ -20,16 +25,86 @@ const { node } = Astro.props;
 const image = node.image?.trim();
 const name = node.name?.trim();
 const bio = node.bio?.trim();
+
+/** Only http(s) addresses; anything else is dropped. */
+function parseUrl(value: string | undefined): URL | null {
+	try {
+		const url = new URL((value ?? "").trim());
+		return url.protocol === "https:" || url.protocol === "http:" ? url : null;
+	} catch {
+		return null;
+	}
+}
+
+/** The site's favicon as a data URI, or null when there is none. Never throws. */
+async function favicon(host: string): Promise<string | null> {
+	try {
+		const response = await fetch(
+			`https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=64`,
+			{ signal: AbortSignal.timeout(2500) },
+		);
+		// A 404 comes with a generic globe; the link icon below reads better.
+		if (!response.ok) return null;
+		const type = response.headers.get("content-type") ?? "image/png";
+		if (!type.startsWith("image/")) return null;
+		const bytes = new Uint8Array(await response.arrayBuffer());
+		if (bytes.length === 0 || bytes.length > 32_768) return null;
+		let binary = "";
+		for (const byte of bytes) binary += String.fromCharCode(byte);
+		return `data:${type};base64,${btoa(binary)}`;
+	} catch {
+		return null;
+	}
+}
+
+const links = await Promise.all(
+	(node.links ?? []).flatMap((link) => {
+		const url = parseUrl(link.url);
+		if (!url) return [];
+		const host = url.hostname.replace(/^www\./, "");
+		return [
+			favicon(url.hostname).then((icon) => ({
+				href: url.href,
+				label: link.label?.trim() || host,
+				icon,
+			})),
+		];
+	}),
+);
 ---
 
 {
-	(image || name || bio) && (
-		<div class="profile">
+	(image || name || bio || links.length > 0) && (
+		<div class:list={["profile", { "profile--no-image": !image }]}>
 			{/* The name sits beside the picture, so the picture needs no alt text of its own. */}
 			{image && <img class="profile__image" src={image} alt="" width="96" height="96" loading="lazy" decoding="async" />}
 			<div class="profile__text">
 				{name && <p class="profile__name">{name}</p>}
 				{bio && <p class="profile__bio">{bio}</p>}
+				{links.length > 0 && (
+					<ul class="profile__links">
+						{links.map((link) => (
+							<li>
+								<a href={link.href} rel="noopener">
+									{link.icon ? (
+										<img src={link.icon} alt="" width="16" height="16" />
+									) : (
+										<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+											<path
+												d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"
+												fill="none"
+												stroke="currentColor"
+												stroke-width="2"
+												stroke-linecap="round"
+											/>
+										</svg>
+									)}
+									<span>{link.label}</span>
+								</a>
+							</li>
+						))}
+					</ul>
+				)}
 			</div>
 		</div>
 	)
@@ -38,12 +113,16 @@ const bio = node.bio?.trim();
 <style>
 	.profile {
 		display: grid;
-		grid-template-columns: 96px 1fr;
+		grid-template-columns: 96px minmax(0, 1fr);
 		gap: 20px;
 		align-items: center;
 		padding: 16px 0;
 		border-top: 1px solid var(--color-border);
 		border-bottom: 1px solid var(--color-border);
+	}
+
+	.profile--no-image {
+		grid-template-columns: minmax(0, 1fr);
 	}
 
 	/* Consecutive blocks share one rule between them. */
@@ -82,9 +161,61 @@ const bio = node.bio?.trim();
 		white-space: pre-line;
 	}
 
+	/* Links: a row of small chips, favicon and label */
+	.profile__links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px 8px;
+		margin: 10px 0 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.profile__links li {
+		margin: 0;
+		padding: 0;
+	}
+
+	.profile__links a {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 3px 10px 3px 8px;
+		border: 1px solid var(--color-border);
+		border-radius: 999px;
+		color: var(--color-text);
+		font-size: 14px;
+		line-height: 1.5;
+		text-decoration: none;
+	}
+
+	.profile__links a:hover {
+		border-color: var(--color-text);
+	}
+
+	.profile__links a:hover span {
+		text-decoration: underline;
+		text-underline-offset: 0.2em;
+	}
+
+	.profile__links img,
+	.profile__links svg {
+		flex: none;
+		width: 16px;
+		height: 16px;
+		border-radius: 3px;
+	}
+
+	.profile__links svg {
+		color: var(--color-muted);
+	}
+
 	@media (max-width: 480px) {
+		.profile:not(.profile--no-image) {
+			grid-template-columns: 72px minmax(0, 1fr);
+		}
+
 		.profile {
-			grid-template-columns: 72px 1fr;
 			gap: 14px;
 			align-items: start;
 		}

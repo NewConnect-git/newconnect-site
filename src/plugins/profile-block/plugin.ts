@@ -1,14 +1,14 @@
 import { definePlugin } from "emdash";
 
 /**
- * One person per block: illustration, name and a short introduction.
+ * One person per block: illustration, name, a short introduction and links.
  * Insert one block per person; consecutive blocks stack as a list.
  * (A repeater can't hold a media picker, so each person is a block.)
  */
 export function createPlugin() {
 	return definePlugin({
 		id: "profile-block",
-		version: "0.1.0",
+		version: "0.2.0",
 		admin: {
 			portableTextBlocks: [
 				{
@@ -25,6 +25,21 @@ export function createPlugin() {
 						},
 						{ type: "text_input", action_id: "name", label: "名前" },
 						{ type: "text_input", action_id: "bio", label: "自己紹介", multiline: true },
+						{
+							type: "repeater",
+							action_id: "links",
+							label: "リンク",
+							item_label: "リンク",
+							fields: [
+								{ type: "text_input", action_id: "url", label: "URL", placeholder: "https://..." },
+								{
+									type: "text_input",
+									action_id: "label",
+									label: "表示名（空ならドメイン名）",
+									placeholder: "例：YouTube、ブログ",
+								},
+							],
+						},
 					],
 				},
 			],

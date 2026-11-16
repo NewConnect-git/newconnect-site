@@ -11,7 +11,7 @@ const local = (file: string) => fileURLToPath(new URL(file, import.meta.url)).re
 export default function profileBlock(): PluginDescriptor {
 	return {
 		id: "profile-block",
-		version: "0.1.0",
+		version: "0.2.0",
 		format: "native",
 		entrypoint: local("./plugin.ts"),
 		componentsEntry: local("./components/index.ts"),

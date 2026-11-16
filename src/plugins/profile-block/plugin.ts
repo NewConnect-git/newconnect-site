@@ -35,7 +35,7 @@ export function createPlugin() {
 								{
 									type: "text_input",
 									action_id: "label",
-									label: "表示名（空ならドメイン名）",
+									label: "表示名（空ならファビコンだけ）",
 									placeholder: "例：YouTube、ブログ",
 								},
 							],

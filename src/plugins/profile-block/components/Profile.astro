@@ -65,7 +65,9 @@ const links = await Promise.all(
 		return [
 			favicon(url.hostname).then((icon) => ({
 				href: url.href,
-				label: link.label?.trim() || host,
+				// No label: the chip shows the favicon alone; the host names the link.
+				label: link.label?.trim() || null,
+				host,
 				icon,
 			})),
 		];
@@ -85,7 +87,13 @@ const links = await Promise.all(
 					<ul class="profile__links">
 						{links.map((link) => (
 							<li>
-								<a href={link.href} rel="noopener">
+								<a
+									href={link.href}
+									rel="noopener"
+									class:list={{ "icon-only": !link.label }}
+									aria-label={link.label ? undefined : link.host}
+									title={link.label ? undefined : link.host}
+								>
 									{link.icon ? (
 										<img src={link.icon} alt="" width="16" height="16" />
 									) : (
@@ -99,7 +107,7 @@ const links = await Promise.all(
 											/>
 										</svg>
 									)}
-									<span>{link.label}</span>
+									{link.label && <span>{link.label}</span>}
 								</a>
 							</li>
 						))}
@@ -187,6 +195,14 @@ const links = await Promise.all(
 		font-size: 14px;
 		line-height: 1.5;
 		text-decoration: none;
+	}
+
+	/* Favicon alone: a round button the height of a labelled chip */
+	.profile__links a.icon-only {
+		justify-content: center;
+		width: 32px;
+		height: 32px;
+		padding: 0;
 	}
 
 	.profile__links a:hover {

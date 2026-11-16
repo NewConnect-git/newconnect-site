@@ -4,7 +4,7 @@ import { Image } from "emdash/ui";
 import TermLinks from "../components/TermLinks.astro";
 import Base from "../layouts/Base.astro";
 import { loadSiteTerms } from "../utils/terms";
-import { digestWeekFromSlug, inWeek, isDigestSlug, upcomingDigestWeek } from "../utils/digest";
+import { inWeek, isDigestSlug, upcomingDigestWeek } from "../utils/digest";
 import { loadBluesky, loadFeedItems, WEEK_MS, withinWeek } from "../utils/feed";
 import { formatDate, formatShortDate, formatStamp, truncate } from "../utils/format";
 
@@ -24,22 +24,16 @@ if (Astro.cache?.enabled) {
 }
 
 const recentPosts = posts.error ? [] : posts.entries;
-// Weekly digests get their own section; the top story and the sidebar list
-// are the posts written by hand.
-const digest = recentPosts.find((post) => isDigestSlug(post.data.slug));
-const sitePosts = recentPosts.filter((post) => !isDigestSlug(post.data.slug));
-const [lead, ...otherPosts] = sitePosts;
-const morePosts = otherPosts.slice(0, 6);
+// The top story is the newest post, a weekly digest included (its thumbnail
+// fills the slot). The sidebar list is the posts written by hand.
+const [lead] = recentPosts;
+const morePosts = recentPosts
+	.filter((post) => post !== lead && !isDigestSlug(post.data.slug))
+	.slice(0, 6);
 
-// The roundup shows the week of the latest digest. Before the first digest
-// comes out, it shows the last seven days instead.
-const digestWeek = digestWeekFromSlug(digest?.data.slug);
-const roundup = digestWeek
-	? feed.items.filter((item) => inWeek(item.postedAt, digestWeek))
-	: withinWeek(feed.items, now);
-const roundupRange = digestWeek
-	? `${formatShortDate(digestWeek.start)}〜${formatShortDate(digestWeek.lastDay)}`
-	: `${formatShortDate(new Date(now.getTime() - WEEK_MS + DAY_MS))}〜${formatShortDate(now)}`;
+// The roundup always shows the last seven days; last week's items are in the digest.
+const roundup = withinWeek(feed.items, now);
+const roundupRange = `${formatShortDate(new Date(now.getTime() - WEEK_MS + DAY_MS))}〜${formatShortDate(now)}`;
 // The big slot goes to a video, or failing that anything with a picture.
 const roundupLead =
 	roundup.find((item) => item.kind === "video" && item.thumbnail) ??
@@ -47,10 +41,8 @@ const roundupLead =
 	roundup[0];
 const roundupRest = roundup.filter((item) => item !== roundupLead);
 const roundupSide = roundupRest.slice(0, 5);
-const roundupMore = roundupRest.length - roundupSide.length;
-const digestHref = digest ? `/posts/${digest.id}` : null;
-// Before the first digest, the note under the roundup counts what the next
-// digest will hold: its week (Saturday to Friday) differs from the last seven days.
+// The note under the roundup counts what the next digest will hold: its week
+// (Saturday to Friday) differs from the last seven days.
 const nextDigest = upcomingDigestWeek(now);
 const nextDigestCount = feed.items.filter((item) => inWeek(item.postedAt, nextDigest)).length;
 
@@ -124,7 +116,7 @@ const hasSide = bluesky.posts.length > 0 || morePosts.length > 0 || hasTerms;
 			<section class="block roundup" aria-labelledby="roundup-title">
 				<header class="roundup__head">
 					<h2 id="roundup-title" class="roundup__title">
-						{digestHref ? <a class="headline-link" href={digestHref}>週刊まとめ</a> : "今週のまとめ"}
+						今週のまとめ
 					</h2>
 					<span class="roundup__sep" aria-hidden="true">/</span>
 					<p class="roundup__note">{roundupRange}に届いた動画と記事</p>
@@ -177,18 +169,10 @@ const hasSide = bluesky.posts.length > 0 || morePosts.length > 0 || hasTerms;
 					)
 				}
 				{
-					digestHref ? (
-						<p class="more">
-							<a href={digestHref}>
-								{roundupMore > 0 ? `ほか ${roundupMore} 本も、まとめ記事で読む →` : "まとめ記事を読む →"}
-							</a>
+					nextDigestCount > 0 && (
+						<p class="more roundup__later">
+							{formatShortDate(nextDigest.start)}からの {nextDigestCount} 本は、{formatShortDate(nextDigest.end)}（土）朝の週刊まとめに載ります。
 						</p>
-					) : (
-						nextDigestCount > 0 && (
-							<p class="more roundup__later">
-								{formatShortDate(nextDigest.start)}からの {nextDigestCount} 本は、{formatShortDate(nextDigest.end)}（土）朝の週刊まとめに載ります。
-							</p>
-						)
 					)
 				}
 			</section>

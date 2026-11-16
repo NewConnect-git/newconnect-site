@@ -16,6 +16,21 @@ if (!page) {
 }
 if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
 
+// A page whose slug starts with another page's slug and "-" sits under that
+// page (notionzadankai-request under notionzadankai): it shows in the
+// breadcrumbs and lights up that page's menu item. Longest match wins.
+const parts = slug.split("-");
+const candidates = parts.slice(1).map((_, i) => parts.slice(0, parts.length - 1 - i).join("-"));
+let parent: { title: string; slug: string } | null = null;
+for (const candidate of candidates) {
+	const result = await getEmDashEntry("pages", candidate);
+	if (Astro.cache?.enabled && result.cacheHint) Astro.cache.set(result.cacheHint);
+	if (result.entry) {
+		parent = { title: result.entry.data.title, slug: candidate };
+		break;
+	}
+}
+
 const settings = await getSiteSettings();
 const seo = getSeoMeta(page, {
 	siteTitle: settings.title ?? "NewConnect",
@@ -26,6 +41,7 @@ const seo = getSeoMeta(page, {
 // Shown above the page, and given to the layout as BreadcrumbList structured data
 const crumbs = [
 	{ name: "トップ", url: "/" },
+	...(parent ? [{ name: parent.title, url: `/pages/${parent.slug}` }] : []),
 	{ name: page.data.title, url: seo.canonical ?? `/pages/${slug}` },
 ];
 ---

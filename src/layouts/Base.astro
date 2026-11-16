@@ -99,12 +99,19 @@ const pageCtx = createPublicPageContext({
 	siteName: siteTitle,
 });
 
-function isCurrent(url: string): "page" | undefined {
+// Pages between the front page and this one (a parent page): their menu
+// items are marked too, as the section this page belongs to.
+const ancestorPaths = new Set(
+	(breadcrumbs ?? []).slice(1, -1).map((crumb) => new URL(crumb.url, Astro.url).pathname.replace(TRAILING_SLASH, "")),
+);
+
+function isCurrent(url: string): "page" | "true" | undefined {
 	try {
 		const target = new URL(url, Astro.url);
 		if (target.origin !== Astro.url.origin) return undefined;
 		const path = target.pathname.replace(TRAILING_SLASH, "");
 		if (path === currentPath) return "page";
+		if (ancestorPaths.has(path)) return "true";
 	} catch {
 		// not a URL
 	}
@@ -535,7 +542,7 @@ const socialItems = social?.data?.items ?? [];
 	}
 
 	.masthead__nav a:hover,
-	.masthead__nav a[aria-current="page"] {
+	.masthead__nav a[aria-current] {
 		color: var(--color-brand);
 	}
 

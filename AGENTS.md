@@ -34,6 +34,7 @@ Locally, `/_emdash/api/setup/dev-bypass?redirect=/_emdash/admin` skips setup.
 - Every new public route needs a `routeRules` entry in `astro.config.mjs`.
 - Pass cache hints to `Astro.cache.set()` for everything a cached route reads.
 - `feed_items` and `bluesky` may be empty or missing; the site must not break. Empty sidebars are not rendered.
+- Pages have no parent field. A page whose slug is another page's slug plus `-…` (`notionzadankai-request`) sits under it: breadcrumbs and the menu item (`aria-current="true"`) follow `src/pages/pages/[slug].astro`.
 - Dates use `Asia/Tokyo` (`src/utils/format.ts`); the server runs in UTC.
 - Text colours keep 4.5:1 on the paper colour in light and dark.
 - When testing Japanese from Git Bash, curl sends Shift-JIS. Use a Node script.

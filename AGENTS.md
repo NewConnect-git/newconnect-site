@@ -1,4 +1,4 @@
-This is the NewConnect site (https://www.new-connects.com/), moved from WordPress to EmDash: a CMS on Astro, running on Cloudflare Workers with D1, R2 and KV. Japanese only. The design is a newspaper: the front page carries the newest post (a weekly digest included) as the top story, then 「今週のまとめ」, the items from the last 7 days. Every Saturday at 9:00 JST the in-repo `weekly-digest` plugin publishes one post (slug `weekly-YYYY-MM-DD`) listing the YouTube videos and blog articles (note, Zenn, Hatena Blog or any RSS / Atom feed the `rss-feed` plugin reads) posted the previous Saturday to Friday.
+This is the NewConnect site (https://www.new-connects.com/), moved from WordPress to EmDash: a CMS on Astro, running on Cloudflare Workers with D1, R2 and KV. Japanese only. The design is a newspaper: the front page carries the newest post (a weekly digest included) as the top story, then 「今週のまとめ」, the items from this week, Sunday to Saturday (JST). Every Saturday at 9:00 JST the in-repo `weekly-digest` plugin publishes one post (slug `weekly-YYYY-MM-DD`) listing the YouTube videos and blog articles (note, Zenn, Hatena Blog or any RSS / Atom feed the `rss-feed` plugin reads) posted the previous Saturday to Friday.
 
 Infrastructure follows `../emdash-theme-mytimeline` (same worker entry, cache rules and plugins), without its i18n.
 
@@ -21,8 +21,8 @@ Locally, `/_emdash/api/setup/dev-bypass?redirect=/_emdash/admin` skips setup.
 | `astro.config.mjs` | `emdash()` config, `routeRules` cache, plugins (`rss-feed`, `bluesky-feed`), fonts |
 | `src/worker.ts` | workers.dev and bare-domain redirect to www (admin too), purge after setup, 5xx kept out of cache, cron |
 | `src/pages/index.astro` | Front page |
-| `src/utils/feed.ts` | Reads `feed_items` and `bluesky`; `withinWeek()` is the 7-day window |
-| `src/utils/digest.ts` | The digest week (Saturday to Friday, JST) and the `weekly-` slug |
+| `src/utils/feed.ts` | Reads `feed_items` and `bluesky` |
+| `src/utils/digest.ts` | The digest week (Saturday to Friday, JST), the `weekly-` slug, and `calendarWeekFor()` for 「今週のまとめ」 (Sunday to Saturday) |
 | `src/plugins/weekly-digest/` | Native plugin: Saturday cron writes the digest post; admins can POST `/_emdash/api/plugins/weekly-digest/run` |
 | `src/plugins/profile-block/` | Native plugin: 「プロフィール」 editor block (illustration, name, introduction), rendered by `components/Profile.astro` |
 | `src/styles/theme.css` | Newspaper tokens (paper, ink, one red). Reset is in `@layer reset` so `prose.css` wins |

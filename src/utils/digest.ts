@@ -70,7 +70,19 @@ export function isDigestSlug(slug: string | null | undefined): boolean {
 	return digestWeekFromSlug(slug) !== null;
 }
 
-export function inWeek(date: Date, week: DigestWeek): boolean {
+/**
+ * The Sunday-to-Saturday week (JST) that `now` falls in, for 「今週のまとめ」
+ * on the front page. It is not the digest week, which runs Saturday to Friday.
+ */
+export function calendarWeekFor(now: Date): Pick<DigestWeek, "start" | "end" | "lastDay"> {
+	const jst = new Date(now.getTime() + JST_OFFSET_MS);
+	const sunday = Date.UTC(jst.getUTCFullYear(), jst.getUTCMonth(), jst.getUTCDate() - jst.getUTCDay());
+	const start = new Date(sunday - JST_OFFSET_MS);
+	const end = new Date(start.getTime() + 7 * DAY_MS);
+	return { start, end, lastDay: new Date(end.getTime() - DAY_MS) };
+}
+
+export function inWeek(date: Date, week: Pick<DigestWeek, "start" | "end">): boolean {
 	const time = date.getTime();
 	return time >= week.start.getTime() && time < week.end.getTime();
 }

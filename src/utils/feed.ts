@@ -1,8 +1,5 @@
 import { getEmDashCollection, type CacheHint } from "emdash";
 
-/** How far back the front page looks: one week. */
-export const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-
 export interface FeedCard {
 	id: string;
 	title: string;
@@ -55,12 +52,6 @@ export async function loadFeedItems(): Promise<{ items: FeedCard[]; cacheHints: 
 		})
 		.sort((a, b) => b.postedAt.getTime() - a.postedAt.getTime());
 	return { items, cacheHints: [cacheHint] };
-}
-
-/** Only the items posted within the last week. */
-export function withinWeek<T extends { postedAt: Date }>(items: T[], now = new Date()): T[] {
-	const since = now.getTime() - WEEK_MS;
-	return items.filter((item) => item.postedAt.getTime() >= since);
 }
 
 /** The video ID in a YouTube watch URL, for thumbnails and embeds. */

@@ -4,12 +4,11 @@ import { Image } from "emdash/ui";
 import TermLinks from "../components/TermLinks.astro";
 import Base from "../layouts/Base.astro";
 import { loadSiteTerms } from "../utils/terms";
-import { inWeek, isDigestSlug, upcomingDigestWeek } from "../utils/digest";
-import { loadBluesky, loadFeedItems, WEEK_MS, withinWeek } from "../utils/feed";
+import { calendarWeekFor, inWeek, isDigestSlug, upcomingDigestWeek } from "../utils/digest";
+import { loadBluesky, loadFeedItems } from "../utils/feed";
 import { formatDate, formatShortDate, formatStamp, truncate } from "../utils/format";
 
 const now = new Date();
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 const [posts, feed, bluesky, settings, siteTerms] = await Promise.all([
 	getEmDashCollection("posts", { orderBy: { published_at: "desc" }, limit: 12 }),
@@ -31,9 +30,10 @@ const morePosts = recentPosts
 	.filter((post) => post !== lead && !isDigestSlug(post.data.slug))
 	.slice(0, 6);
 
-// The roundup always shows the last seven days; last week's items are in the digest.
-const roundup = withinWeek(feed.items, now);
-const roundupRange = `${formatShortDate(new Date(now.getTime() - WEEK_MS + DAY_MS))}〜${formatShortDate(now)}`;
+// The roundup shows this week, Sunday to Saturday (JST); earlier items are in the digests.
+const thisWeek = calendarWeekFor(now);
+const roundup = feed.items.filter((item) => inWeek(item.postedAt, thisWeek));
+const roundupRange = `${formatShortDate(thisWeek.start)}〜${formatShortDate(thisWeek.lastDay)}`;
 // The big slot goes to a video, or failing that anything with a picture.
 const roundupLead =
 	roundup.find((item) => item.kind === "video" && item.thumbnail) ??
@@ -123,7 +123,7 @@ const hasSide = bluesky.posts.length > 0 || morePosts.length > 0 || hasTerms;
 				</header>
 				{
 					!roundupLead ? (
-						<p class="empty-note">この 1 週間に届いた動画と記事はまだありません。</p>
+						<p class="empty-note">今週届いた動画と記事は、まだありません。</p>
 					) : (
 						<div class:list={["roundup__grid", { "roundup__grid--single": roundupSide.length === 0 }]}>
 							<a class="roundup-lead" href={roundupLead.url} rel="noopener">

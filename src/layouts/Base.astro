@@ -146,7 +146,8 @@ if (webPage && canonicalUrl) {
 		name: pageTitle ?? title,
 		...(metaDescription ? { description: metaDescription } : {}),
 		url: canonicalUrl,
-		isPartOf: { "@type": "WebSite", name: siteTitle, url: `${siteUrl}/` },
+		// EmDash's own WebSite node carries this @id, so the two merge into one.
+		isPartOf: { "@type": "WebSite", "@id": `${siteUrl}/#website`, name: siteTitle, url: `${siteUrl}/` },
 	});
 }
 if (breadcrumbs && breadcrumbs.length > 1) {
